@@ -1,11 +1,5 @@
 <?php
-# id telegram @gholipour3
-#اطلاعات پنل در این فایل وارد کنید
-$url_panel="https://sitepanelmarzban:8080";
-/* درصورتی که آدرس پنل پورت دارد پورت را وارد کنید در غیراینصورت بدون پورت آدرس پنل بزنید*/
-$username_panel = "admin";#نام کاربری پنل مرزبان را وارد کنید
-$password_panel = "admin"; # رمز عبور پنل مرزبان را وارد نمایید
-
+include('config.php');
 
 function bot($method, $datas = [])
 {
@@ -71,4 +65,40 @@ function token_panel(){
     $body = json_decode($token, true);
     $token = $body['access_token'];
     return $token;
+}
+
+function adduser($username,$expire,$data_limit)
+{
+ $token = token_panel();
+     global $url_panel;
+    $url = $url_panel."/api/user";
+    $header_value = 'Bearer ';
+    $data = array(
+        "proxies" => array(
+            "vmess" => array( ),
+            "vless" => array(),
+            "trojan" => array()
+        ),
+        "expire" => $expire,
+        "data_limit" => $data_limit,
+        "username" => $username
+    );
+
+    $payload = json_encode($data);
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        'Accept: application/json',
+        'Authorization: ' . $header_value . $token,
+        'Content-Type: application/json'
+    ));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    return $response;
 }
