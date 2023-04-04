@@ -349,8 +349,6 @@
                 'reply_markup' => $admin,
             ]); 
     }
-        if ($chat_id == $adminidnumbeer) {
-    
             if ($text == "📣 تنظیم کانال جوین اجباری") {
                 bot('sendmessage', [
                     'chat_id' => $chat_id,
@@ -400,16 +398,3 @@
                     file_put_contents("data/channelstatus", "false");
                 }
             }
-        } else {
-            bot('sendmessage', [
-                'chat_id' => $chat_id,
-                'text' => "شما اجازه دسترسی به این منو را ندارید"
-            ]);
-            bot('sendmessage', [
-                'chat_id' => $adminidnumbeer,
-                'text' => "
-            🚨کاربر با نام کاربری زیر قصد ورود به پنل ادمین را داشت 
-    🆔 @$usernameaccont
-            "
-            ]);
-        }
