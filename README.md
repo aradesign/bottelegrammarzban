@@ -82,13 +82,4 @@ https://t.me/SwhBot
 
 
 
-آدرس کیف پول برای حمایت :
-
-
-BTC : 16SnQEz2quyZRndH3iBieHSdznF1iPkkT5
-
-
-USDT (TRC20) : TEj59UfVRpHVBuwf6oQaE3TwKSEfQCnZgV 
-
-
 </h2>
