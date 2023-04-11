@@ -28,18 +28,18 @@ if (!file_exists("data/value")){
     file_put_contents('data/value',"1");
 }
 #-----------------------#
-$telegram_ip_ranges = [
-  ['lower' => '149.154.160.0', 'upper' => '149.154.175.255'],
-  ['lower' => '91.108.4.0',    'upper' => '91.108.7.255']
-];
-$ip_dec = (float) sprintf("%u", ip2long($_SERVER['REMOTE_ADDR']));
-$ok = false;
-foreach ($telegram_ip_ranges as $telegram_ip_range) if (!$ok) {
-  $lower_dec = (float) sprintf("%u", ip2long($telegram_ip_range['lower']));
-  $upper_dec = (float) sprintf("%u", ip2long($telegram_ip_range['upper']));
-  if ($ip_dec >= $lower_dec and $ip_dec <= $upper_dec) $ok = true;
-}
-if (!$ok) die("false");
+ $telegram_ip_ranges = [
+   ['lower' => '149.154.160.0', 'upper' => '149.154.175.255'],
+   ['lower' => '91.108.4.0',    'upper' => '91.108.7.255']
+ ];
+ $ip_dec = (float) sprintf("%u", ip2long($_SERVER['REMOTE_ADDR']));
+ $ok = false;
+ foreach ($telegram_ip_ranges as $telegram_ip_range) if (!$ok) {
+   $lower_dec = (float) sprintf("%u", ip2long($telegram_ip_range['lower']));
+   $upper_dec = (float) sprintf("%u", ip2long($telegram_ip_range['upper']));
+   if ($ip_dec >= $lower_dec and $ip_dec <= $upper_dec) $ok = true;
+ }
+ if (!$ok) die("false");
 #-----------------------#
 $keyboard = json_encode([
   'keyboard' => [
@@ -91,7 +91,7 @@ $response = json_decode(file_get_contents("https://api.telegram.org/bot$token/ge
 $tch = $response->result->status;
 
 #-----------------------#
-if ($tch != 'member' && $tch != 'creator' && $tch != 'administrator' && $Channel_locka == "on" && !in_array($from_id,$admin_ids)) {
+if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka == "on" && !in_array($from_id,$admin_ids)) {
     $text_channel = "   
     ⚠️کاربر گرامی ؛ شما عضو چنل ما نیستید
     ❗️@".$channels['link']."
@@ -121,72 +121,29 @@ if ($tch != 'member' && $tch != 'creator' && $tch != 'administrator' && $Channel
         $connect->query("UPDATE user SET step = 'getusernameinfo' WHERE id = '$from_id'");
     }
     if ($user['step'] == "getusernameinfo" && $text != "🏠 بازگشت به منوی اصلی") {
-        $username = $text;
-        if (preg_match('/^[A-Za-z0-9_]+$/', $username)) {
-
+        if (preg_match('~^[a-z][a-z\d_]{3,32}$~i', $text)) {
             $data_useer = getuser($text);
             if (isset($data_useer['username'])) {
                 #-------------status----------------#
                 $status = $data_useer['status'];
-                switch ($status) {
-                    case 'active':
-                        $status_var = "✅فعال";
-                        break;
-                    case 'limited':
-                        $status_var = "🔚پایان حجم";
-                        break;
-                    case 'disabled':
-                        $status_var = "❌غیرفعال";
-                        break;
-
-                    default:
-                        $status_var = "🤷‍♂️نامشخص";
-                        break;
-                }
-
-
-                #-----------------------------#
-                $timestamp = $data_useer['expire'];
-                $expirationDate = jdate('Y/m/d', $timestamp);
-                $current_date = jdate('Y/m/d');
-                if (date('Y/m/d', $timestamp) == "1970/01/01") {
-                    $expirationDate = "نامحدود";
-                }
-                #-----------------------------#
-                $LastTraffic = round($data_useer['data_limit'] / 1073741824, 2) . "GB";
-                if (round($data_useer['data_limit'] / 1073741824, 2) < 1) {
-                    $LastTraffic = round($data_useer['data_limit'] / 1073741824, 2) * 1000 . "MB";
-                }
-                if (round($data_useer['data_limit'] / 1073741824, 2) == 0) {
-                    $LastTraffic = "نامحدود";
-                    $RemainingVolume = "نامحدود";
-                }
-                #-----------------------------#
-                $usedTrafficGb = round($data_useer['used_traffic'] / 1073741824, 2) . "GB";
-                if (round($data_useer['used_traffic'] / 1073741824, 2) < 1) {
-                    $usedTrafficGb = round($data_useer['used_traffic'] / 1073741824, 2) * 1000 . "MB";
-                }
-                if (round($data_useer['used_traffic'] / 1073741824, 2) == 0) {
-                    $usedTrafficGb = "مصرف نشده";
-                }
-                #-----------------------------#
-                if (round($data_useer['data_limit'] / 1073741824, 2) != 0) {
-                    $min = round($data_useer['data_limit'] / 1073741824, 2) - round($data_useer['used_traffic'] / 1073741824, 2);
-                    $RemainingVolume = $min . "GB";
-                    if ($min < 1) {
-                        $RemainingVolume = $min * 1000 . "MB";
-                    }
-                }
-                #-----------------------------#
-
-                $currentTime = time();
-                $timeDiff = $data_useer['expire'] - $currentTime;
-
-                if ($timeDiff > 0) {
-                    $day = floor($timeDiff / 86400) . " روز";
-                } else {
-                    $day = "نامحدود";
-                }
+                $status_var = [
+                    'active' => '✅فعال',
+                    'limited' => '🔚پایان حجم',
+                    'disabled' => '❌غیرفعال',
+                    'expired' => 'نامشخص'
+                ][$status];
+                #--------------expire---------------#
+                $expirationDate = $data_useer['expire'] ? jdate('Y/m/d', $data_useer['expire']) : "نامحدود";
+                #-------------data_limit----------------#
+                $LastTraffic = $data_useer['data_limit'] ? formatBytes($data_useer['data_limit']) : "نامحدود";
+                #---------------RemainingVolume--------------#
+                $output =  $data_useer['data_limit'] - $data_useer['used_traffic'];
+                $RemainingVolume = $data_useer['data_limit'] ? formatBytes($output) : "نامحدود";
+                #---------------used_traffic--------------#
+                $usedTrafficGb = $data_useer['used_traffic'] ? formatBytes($data_useer['used_traffic']) : "مصرف نشده";
+                #--------------day---------------#
+                $timeDiff = $data_useer['expire'] - time();
+                $day = $data_useer['expire'] ? floor($timeDiff / 86400) . " روز" : "نامحدود";
                 #-----------------------------#
 
 
@@ -222,7 +179,6 @@ if ($tch != 'member' && $tch != 'creator' && $tch != 'administrator' && $Channel
                 sendmessage($from_id, "نام کاربری وجود ندارد", $keyboard);
             }
             $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
-            file_put_contents("data/user/$from_id/step", "home");
         } else {
             $textusernameinva = " 
                 ❌نام کاربری نامعتبر است
@@ -300,14 +256,15 @@ if ($tch != 'member' && $tch != 'creator' && $tch != 'administrator' && $Channel
 
 
 #----------------admin------------------#
-if($text == "panel" && in_array($from_id,$admin_ids)){
+if(!in_array($from_id,$admin_ids)) return;
+if($text == "panel"){
     sendmessage($from_id,"به پنل ادمین خوش آمدید",$keyboardadmin);
 }
-if ($text == "🏠 بازگشت به منوی مدیریت" && in_array($from_id,$admin_ids)){
+if ($text == "🏠 بازگشت به منوی مدیریت"){
     sendmessage($from_id,"به پنل ادمین بازگشتید! ",$keyboardadmin);
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
 }
-if ($text =="🔑 روشن / خاموش کردن قفل کانال" && in_array($from_id,$admin_ids)){
+if ($text =="🔑 روشن / خاموش کردن قفل کانال"){
 if($Channel_locka=="off"){
     sendmessage($from_id,"عضویت اجباری روشن گردید",$keyboardadmin);
     $connect->query("UPDATE channels SET Channel_lock = 'on'");
@@ -317,7 +274,7 @@ else{
     $connect->query("UPDATE channels SET Channel_lock = 'off'");
 }
 }
-if($text =="📣 تنظیم کانال جوین اجباری" && in_array($from_id,$admin_ids)) {
+if($text =="📣 تنظیم کانال جوین اجباری") {
     $text_channel = "
     برای تنظیم کانال عضویت اجباری لطفا آیدی کانال خود را بدون @ وارد نمایید.
     
@@ -335,7 +292,7 @@ if($user['step'] == "addchannel" && $text !="🏠 بازگشت به منوی م�
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
 
 }
-if ($text == "👨‍💻 اضافه کردن ادمین" && in_array($from_id,$admin_ids)){
+if ($text == "👨‍💻 اضافه کردن ادمین"){
     sendmessage($from_id, "🌟آیدی عددی ادمین جدید را ارسال نمایید.", $backadmin);
     $connect->query("UPDATE user SET step = 'addadmin' WHERE id = '$from_id'");
 }
@@ -345,7 +302,7 @@ if($user['step'] == "addadmin" && $text !="🏠 بازگشت به منوی مد�
     $connect->query("INSERT INTO admin (id_admin) VALUES ('$text')");
 
 }
-if($text == "❌ حذف ادمین" && in_array($from_id,$admin_ids)){
+if($text == "❌ حذف ادمین"){
     sendmessage($from_id, "🛑 آیدی عددی ادمین را ارسال کنید.", $backadmin);
     $connect->query("UPDATE user SET step = 'deleteadmin' WHERE id = '$from_id'");
 }
@@ -355,7 +312,7 @@ if ($user['step'] == "deleteadmin" && $text !="🏠 بازگشت به منوی �
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
 
 }
-if ($text == "➕محدودیت ساخت اکانت تست برای کاربر" && in_array($from_id,$admin_ids)){
+if ($text == "➕محدودیت ساخت اکانت تست برای کاربر"){
     $text_add_user_admin = "
     ⚜️ آیدی عددی کاربر را ارسال کنید 
 توضیحات : در این بخش میتوانید محدودیت ساخت اکانت تست را برای کاربر تغییر دهید. بطور پیشفرض محدودیت ساخت عدد 1 است
@@ -374,7 +331,7 @@ if ($user['step'] == "get_number_limit" && $text !="🏠 بازگشت به من�
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
     $connect->query("UPDATE user SET limit_usertest = '$text' WHERE id = '$value_def'");
 }
-if ($text == "➕محدودیت ساخت اکانت تست برای همه" && in_array($from_id,$admin_ids)){
+if ($text == "➕محدودیت ساخت اکانت تست برای همه"){
     sendmessage($from_id, "تعداد ساخت اکانت تست را  وارد نمایید.", $backadmin);
     $connect->query("UPDATE user SET step = 'limit_usertest_allusers' WHERE id = '$from_id'");
 }
@@ -384,10 +341,10 @@ if ($user['step'] == "limit_usertest_allusers"  && $text !="🏠 بازگشت ب
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
 
 }
-if($text == "📯 تنظیمات کانال"  && in_array($from_id,$admin_ids)) {
+if($text == "📯 تنظیمات کانال") {
     sendmessage($from_id, "یکی از گزینه های زیر را انتخاب کنید", $channelkeyboard);
 }
-if ($text == "📊 آمار ربات"  && in_array($from_id,$admin_ids)){
+if ($text == "📊 آمار ربات"){
     if (!empty(token_panel())){
         $textpanel = "✅ پنل متصل است";
     }
