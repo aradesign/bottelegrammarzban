@@ -7,7 +7,7 @@ limit_usertest int(100) NOT NULL ,
 step varchar(5000) NOT NULL)");
 //-----------------------------------------------------------------
 $connect->query("CREATE TABLE admin (
-id_admin int(100) NOT NULL )");
+id_admin varchar(5000) NOT NULL )");
 //-----------------------------------------------------------------
 $connect->query("CREATE TABLE channels (
 Channel_lock varchar(200) NOT NULL,
