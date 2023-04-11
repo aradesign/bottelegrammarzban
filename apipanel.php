@@ -56,11 +56,11 @@ function adduser($username,$expire,$data_limit)
 {
  $token = token_panel();
      global $url_panel;
-    $url = $url_panel."/api/user";
+    $url = $url_panel."/api/uer";
     $header_value = 'Bearer ';
     $data = array(
         "proxies" => array(
-            "vmess" => array(),
+            "vmess" => array( ),
             "vless" => array(),
             "trojan" => array()
         ),
@@ -86,4 +86,13 @@ function adduser($username,$expire,$data_limit)
     curl_close($ch);
 
     return $response;
+}
+//----------------------------------
+
+function formatBytes($bytes, $precision = 2): string
+{
+    $base = log($bytes, 1024);
+    $power = $bytes > 0 ? floor($base) : 0;
+    $suffixes = ['بایت', 'کیلوبایت', 'مگابایت', 'گیگابایت', 'ترابایت'];
+    return round(pow(1024, $base - $power), $precision) . ' ' . $suffixes[$power];
 }
