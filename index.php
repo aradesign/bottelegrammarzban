@@ -21,10 +21,9 @@ if (isset($update["message"])) {
   $from_id = $update["callback_query"]["from"]["id"];
 }
 #-----------------------#
-if(!is_dir("data")){
+if(!is_dir("data"))
     mkdir("data");
-}
-if (!file_exists("data/value")){
+if (!file_exists("data/value")) {
     file_put_contents('data/value',"1");
 }
 #-----------------------#
@@ -205,8 +204,6 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
           ";
             sendmessage($from_id, $textusertest, $backuser);
             $connect->query("UPDATE user SET step = 'crateusertest' WHERE id = '$from_id'");
-            $limit_usertest = $user['limit_usertest'] - 1;
-            $connect->query("UPDATE user SET limit_usertest = '$limit_usertest' WHERE id = '$from_id'");
         } else {
             sendmessage($from_id, "⚠️ اجازه ساخت اشتراک تست را ندارید.", $keyboard);
         }
@@ -237,6 +234,8 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
                     ";
                 sendmessage($from_id, $textcreatuser, $keyboard);
                 $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
+                $limit_usertest = $user['limit_usertest'] - 1;
+                $connect->query("UPDATE user SET limit_usertest = '$limit_usertest' WHERE id = '$from_id'");
             }
         } else {
             if ($text != "🏠 بازگشت به منوی اصلی") {
