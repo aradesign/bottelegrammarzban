@@ -15,7 +15,7 @@ function getuser($username)
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Accept: application/json',
-        'Authorization: ' . $header_value . $token
+        'Authorization: ' . $header_value .  $token['access_token']
     ));
 
     $output = curl_exec($ch);
@@ -48,14 +48,13 @@ function token_panel(){
     $token = curl_exec($curl_token);
     curl_close($curl_token);
 
-    $body = json_decode($token, true);
-    $token = $body['access_token'];
-    return $token;
+    $body = json_decode( $token, true);
+    return $body;
 }
 function adduser($username,$expire,$data_limit)
 {
  $token = token_panel();
-     global $url_panel;
+    global $url_panel;
     $url = $url_panel."/api/uer";
     $header_value = 'Bearer ';
     $data = array(
@@ -77,7 +76,7 @@ function adduser($username,$expire,$data_limit)
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Accept: application/json',
-        'Authorization: ' . $header_value . $token,
+        'Authorization: ' . $header_value .  $token['access_token'],
         'Content-Type: application/json'
     ));
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
@@ -86,6 +85,27 @@ function adduser($username,$expire,$data_limit)
     curl_close($ch);
 
     return $response;
+}
+//----------------------------------
+function Get_System_Stats(){
+    global $url_panel;
+    $token = token_panel();
+    $url =  $url_panel.'/api/system';
+    $header_value = 'Bearer ';
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_HTTPGET, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        'Accept: application/json',
+        'Authorization: ' . $header_value .  $token['access_token']
+    ));
+
+    $output = curl_exec($ch);
+    curl_close($ch);
+    $Get_System_Stats = json_decode($output, true);
+    return $Get_System_Stats;
 }
 //----------------------------------
 
