@@ -21,11 +21,8 @@ if (isset($update["message"])) {
   $from_id = $update["callback_query"]["from"]["id"];
 }
 #-----------------------#
-if(!is_dir("data"))
-    mkdir("data");
-if (!file_exists("data/value")) {
-    file_put_contents('data/value',"1");
-}
+is_dir("data") || mkdir("data");
+file_exists("data/value") || file_put_contents('data/value',"1");;
 #-----------------------#
  $telegram_ip_ranges = [
    ['lower' => '149.154.160.0', 'upper' => '149.154.175.255'],
@@ -50,8 +47,16 @@ $keyboardadmin = json_encode([
     'keyboard' => [
         [['text' => "📯 تنظیمات کانال"],['text' => "📊 آمار ربات"]],
         [['text' => "👨‍💻 اضافه کردن ادمین"],['text' => "❌ حذف ادمین"]],
+        [['text' => "📜 مشاهده لیست  ادمین ها"],['text' => "🖥 تنظیمات پنل مرزبان"]]
+    ],
+    'resize_keyboard' => true
+]);
+$keyboardmarzban =  json_encode([
+    'keyboard' => [
         [['text' => "➕محدودیت ساخت اکانت تست برای کاربر"]],
-        [['text' =>"➕محدودیت ساخت اکانت تست برای همه"]]
+        [['text' =>"➕محدودیت ساخت اکانت تست برای همه"]],
+        [['text' => '🔌 وضعیت پنل ']],
+        [['text' => "🏠 بازگشت به منوی مدیریت"]]
     ],
     'resize_keyboard' => true
 ]);
@@ -83,6 +88,10 @@ $id_admin = mysqli_query($connect, "SELECT * FROM admin");
 while($row = mysqli_fetch_assoc($id_admin)) {
     $admin_ids[] = $row['id_admin'];
 }
+$id_user = mysqli_query($connect, "SELECT (id) FROM user");
+while($row = mysqli_fetch_assoc($id_user)) {
+    $users_ids[] = $row['id_admin'];
+}
 $value_def=file_get_contents("data/value");
 #-----------------------#
 $channels = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM channels  LIMIT 1"));
@@ -99,7 +108,8 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
     کنید❤️
     ";
     sendmessage($from_id,$text_channel,null);
-} else {
+    return;
+}
     if ($text == "/start") {
         $text = "
         سلام $first_name 
@@ -120,9 +130,22 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
         $connect->query("UPDATE user SET step = 'getusernameinfo' WHERE id = '$from_id'");
     }
     if ($user['step'] == "getusernameinfo" && $text != "🏠 بازگشت به منوی اصلی") {
-        if (preg_match('~^[a-z][a-z\d_]{3,32}$~i', $text)) {
+        if (!preg_match('~^[a-z][a-z\d_]{3,32}$~i', $text)){
+        $textusernameinva = " 
+                ❌نام کاربری نامعتبر است
+            
+            🔄 مجددا نام کاربری خود  را ارسال کنید
+                ";
+        sendmessage($from_id, $textusernameinva, $backuser);
+        $connect->query("UPDATE user SET step = 'getusernameinfo' WHERE id = '$from_id'");
+        return;
+        }
             $data_useer = getuser($text);
-            if (isset($data_useer['username'])) {
+            if ($data_useer['detail'] == "User not found") {
+                sendmessage($from_id, "نام کاربری وجود ندارد", $keyboard);
+                $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
+                return;
+                }
                 #-------------status----------------#
                 $status = $data_useer['status'];
                 $status_var = [
@@ -149,7 +172,7 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
                 $keyboardinfo = json_encode([
                     'inline_keyboard' => [
                         [
-                            ['text' => $data_useer['username'],'callback_data'=>"dalsl"],
+                            ['text' => $data_useer['username'],'callback_data'=>"username"],
                             ['text' => 'نام کاربری :', 'callback_data' => 'username'],
                         ], [
                             ['text' => $status_var, 'callback_data' => 'status_var'],
@@ -157,6 +180,7 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
                         ], [
                             ['text' => $expirationDate, 'callback_data' => 'expirationDate'],
                             ['text' => 'زمان پایان:', 'callback_data' => 'expirationDate'],
+                        ], [
                         ], [
                             ['text' => $day, 'callback_data' => 'روز'],
                             ['text' => 'زمان باقی مانده تا پایان سرویس:', 'callback_data' => 'day'],
@@ -174,22 +198,13 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
                 ]);
                 sendmessage($from_id, "📊  اطلاعات سرویس :", $keyboardinfo);
                 sendmessage($from_id, " یک گزینه را انتخاب کنید", $keyboard);
-            } else {
-                sendmessage($from_id, "نام کاربری وجود ندارد", $keyboard);
-            }
             $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
-        } else {
-            $textusernameinva = " 
-                ❌نام کاربری نامعتبر است
-            
-            🔄 مجددا نام کاربری خود  را ارسال کنید
-                ";
-            sendmessage($from_id, $textusernameinva, $back);
-            $connect->query("UPDATE user SET step = 'getusernameinfo' WHERE id = '$from_id'");
-        }
     }
     if ($text == "🔑 اکانت تست") {
-        if ($user['limit_usertest'] != 0) {
+        if ($user['limit_usertest'] == 0) {
+                sendmessage($from_id, "⚠️ محدودیت ساخت اشتراک تست شما به پایان رسید.", $keyboard);
+                return;
+        }
             $textusertest = "
           
             👤برای ساخت اشتراک تست یک نام کاربری انگلیسی ارسال نمایید.
@@ -204,9 +219,6 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
           ";
             sendmessage($from_id, $textusertest, $backuser);
             $connect->query("UPDATE user SET step = 'crateusertest' WHERE id = '$from_id'");
-        } else {
-            sendmessage($from_id, "⚠️ اجازه ساخت اشتراک تست را ندارید.", $keyboard);
-        }
     }
 #-----------------------------------#
     if ($user['step'] == "crateusertest" && $text != "🏠 بازگشت به منوی اصلی") {
@@ -249,7 +261,7 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
         sendmessage($from_id, $textback, $keyboard);
         $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
     }
-}
+
 //------------------------------------------------------------------------------
 
 
@@ -265,11 +277,11 @@ if ($text == "🏠 بازگشت به منوی مدیریت"){
 }
 if ($text =="🔑 روشن / خاموش کردن قفل کانال"){
 if($Channel_locka=="off"){
-    sendmessage($from_id,"عضویت اجباری روشن گردید",$keyboardadmin);
+    sendmessage($from_id,"عضویت اجباری روشن گردید",$channelkeyboard);
     $connect->query("UPDATE channels SET Channel_lock = 'on'");
 }
 else{
-    sendmessage($from_id,"عضویت اجباری خاموش گردید",$keyboardadmin);
+    sendmessage($from_id,"عضویت اجباری خاموش گردید",$channelkeyboard);
     $connect->query("UPDATE channels SET Channel_lock = 'off'");
 }
 }
@@ -306,6 +318,7 @@ if($text == "❌ حذف ادمین"){
     $connect->query("UPDATE user SET step = 'deleteadmin' WHERE id = '$from_id'");
 }
 if ($user['step'] == "deleteadmin" && $text !="🏠 بازگشت به منوی مدیریت"){
+    if (!is_numeric($text) || !in_array($text,$admin_ids))return;
     sendmessage($from_id, "✅ ادمین با موفقیت حذف گردید.", $keyboardadmin);
     $connect->query("DELETE FROM admin WHERE id_admin = '$text'");
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
@@ -320,12 +333,16 @@ if ($text == "➕محدودیت ساخت اکانت تست برای کاربر")
     $connect->query("UPDATE user SET step = 'add_limit_usertest_foruser' WHERE id = '$from_id'");
 }
 if ($user['step'] == "add_limit_usertest_foruser" && $text !="🏠 بازگشت به منوی مدیریت") {
+    if (!in_array($text,$users_ids)){
+        sendmessage($from_id,"کاربری با این شناسه یافت نشد",$backadmin);
+        return;
+    }
     sendmessage($from_id, "آیدی عددی دریافت شد لطفا تعداد ساخت اکانت تست را ارسال کنید", $backadmin);
     file_put_contents("data/value",$text);
     $connect->query("UPDATE user SET step = 'get_number_limit' WHERE id = '$from_id'");
 }
 if ($user['step'] == "get_number_limit" && $text !="🏠 بازگشت به منوی مدیریت") {
-    sendmessage($from_id, "محدودیت برای کاربر تنظیم گردید.", $keyboardadmin);
+    sendmessage($from_id, "محدودیت برای کاربر تنظیم گردید.", $keyboardmarzban);
     $id_user_set = $text;
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
     $connect->query("UPDATE user SET limit_usertest = '$text' WHERE id = '$value_def'");
@@ -335,7 +352,7 @@ if ($text == "➕محدودیت ساخت اکانت تست برای همه"){
     $connect->query("UPDATE user SET step = 'limit_usertest_allusers' WHERE id = '$from_id'");
 }
 if ($user['step'] == "limit_usertest_allusers"  && $text !="🏠 بازگشت به منوی مدیریت"){
-    sendmessage($from_id, "محدودیت ساخت اکانت برای تمام کاربران تنظیم شد", $keyboardadmin);
+    sendmessage($from_id, "محدودیت ساخت اکانت برای تمام کاربران تنظیم شد", $keyboardmarzban);
     $connect->query("UPDATE user SET limit_usertest = '$text'");
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
 
@@ -344,18 +361,44 @@ if($text == "📯 تنظیمات کانال") {
     sendmessage($from_id, "یکی از گزینه های زیر را انتخاب کنید", $channelkeyboard);
 }
 if ($text == "📊 آمار ربات"){
-    if (!empty(token_panel())){
-        $textpanel = "✅ پنل متصل است";
-    }
-    else{
-        $textpanel = "❌ پنل متصل نیست";
-    }
-    $statisticssql = $connect->query("SELECT COUNT(id) FROM user");
-    $statistics = $statisticssql->fetch_array(MYSQLI_NUM);
+    $stmt = $connect->prepare("SELECT COUNT(id) FROM user");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $statistics = $result->fetch_array(MYSQLI_NUM);
     $text_statistics = "
     👤 تعداد کاربران : $statistics[0]
-    
-    🖥 وضعیت پنل مرزبان  : $textpanel
-    ";
+        ";
     sendmessage($from_id, "$text_statistics", $keyboardadmin);
+}
+if ($text == "🖥 تنظیمات پنل مرزبان"){
+    sendmessage($from_id, "یکی از گزینه های زیر را انتخاب کنید", $keyboardmarzban);
+}
+if($text == "🔌 وضعیت پنل"){
+    $Check_token = token_panel();
+    if (isset($Check_token['access_token'])){
+        $Condition_marzban = "✅ پنل متصل است";
+    }
+    elseif ($Check_token['detail'] == "Incorrect username or password"){
+        $Condition_marzban = "❌ نام کاربری یا رمز عبور پنل اشتباه است";
+    }
+    else {
+        $Condition_marzban= "امکان اتصال به پنل مرزبان وجود ندارد.😔";
+    }
+    $System_Stats = Get_System_Stats();
+    $active_users = $System_Stats['users_active'];
+    $text_marzban= "
+    اطلاعات پنل شما: 
+        🖥 وضعیت اتصال پنل مرزبان  : $Condition_marzban
+        👤 تعداد کاربران فعال  : $active_users
+    ";
+    sendmessage($from_id, $text_marzban, $keyboardmarzban);
+}
+if ($text =="📜 مشاهده لیست  ادمین ها"){
+    foreach ($admin_ids as $admin){
+        $List_admin .= "$admin \n";
+    }
+    $list_admin_text= "
+    آیدی عددی ادمین ها: 
+    $List_admin";
+    sendmessage($from_id, $list_admin_text, $keyboardadmin);
 }
