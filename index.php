@@ -1,4 +1,8 @@
 <?php
+/*
+pv  => @gholipour3
+channel => @botpanelmarzban
+*/
 include('config.php');
 include('botapi.php');
 include('apipanel.php');
@@ -20,9 +24,6 @@ if (isset($update["message"])) {
   $in_text = $update["callback_query"]["message"]["text"];
   $from_id = $update["callback_query"]["from"]["id"];
 }
-#-----------------------#
-is_dir("data") || mkdir("data");
-file_exists("data/value") || file_put_contents('data/value',"1");;
 #-----------------------#
  $telegram_ip_ranges = [
    ['lower' => '149.154.160.0', 'upper' => '149.154.175.255'],
@@ -55,7 +56,7 @@ $keyboardmarzban =  json_encode([
     'keyboard' => [
         [['text' => "➕محدودیت ساخت اکانت تست برای کاربر"]],
         [['text' =>"➕محدودیت ساخت اکانت تست برای همه"]],
-        [['text' => '🔌 وضعیت پنل ']],
+        [['text' => '🔌 وضعیت پنل '],['text' => "🖥 اضافه کردن پنل  مرزبان "]],
         [['text' => "🏠 بازگشت به منوی مدیریت"]]
     ],
     'resize_keyboard' => true
@@ -80,6 +81,37 @@ $backadmin = json_encode([
     ],
     'resize_keyboard' => true
 ]);
+$namepanel = [];
+$marzbnget = mysqli_query($connect, "SELECT * FROM marzban_panel");
+while($row = mysqli_fetch_assoc($marzbnget)) {
+    $namepanel[] = [$row['name_panel']];
+}
+$list_marzban_panel = [
+    'keyboard' => [],
+    'resize_keyboard' => true,
+];
+$list_marzban_panel['keyboard'][] = [
+    ['text' => "🏠 بازگشت به منوی مدیریت"],
+];
+foreach($namepanel as $button) {
+    $list_marzban_panel['keyboard'][] = [
+        ['text' => $button[0]]
+    ];
+}
+$json_list_marzban_panel = json_encode($list_marzban_panel);
+$list_marzban_panel_users = [
+    'keyboard' => [],
+    'resize_keyboard' => true,
+];
+$list_marzban_panel_users['keyboard'][] = [
+    ['text' => "🏠 بازگشت به منوی اصلی"],
+];
+foreach($namepanel as $button) {
+    $list_marzban_panel_users['keyboard'][] = [
+        ['text' => $button[0]]
+    ];
+}
+$list_marzban_panel_user = json_encode($list_marzban_panel_users);
 #-----------------------#
 $user = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM user WHERE id = '$from_id' LIMIT 1"));
 $Channel_locka_get = mysqli_fetch_assoc(mysqli_query($connect, "SELECT Channel_lock FROM channels"));
@@ -88,18 +120,20 @@ $id_admin = mysqli_query($connect, "SELECT * FROM admin");
 while($row = mysqli_fetch_assoc($id_admin)) {
     $admin_ids[] = $row['id_admin'];
 }
-$id_user = mysqli_query($connect, "SELECT (id) FROM user");
+$id_user = mysqli_query($connect, "SELECT * FROM user");
 while($row = mysqli_fetch_assoc($id_user)) {
-    $users_ids[] = $row['id_admin'];
+    $users_ids[] = $row['id'];
 }
-$value_def=file_get_contents("data/value");
+$Processing_value =  $user['Processing_value'];
 #-----------------------#
 $channels = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM channels  LIMIT 1"));
-$response = json_decode(file_get_contents("https://api.telegram.org/bot$token/getChatMember?chat_id=@{$channels['link']}&user_id=".$chat_id));
-$tch = $response->result->status;
+if (isset($channels['link'])) {
+    $response = json_decode(file_get_contents("https://api.telegram.org/bot$token/getChatMember?chat_id=@{$channels['link']}&user_id=" . $chat_id));
+    $tch = $response->result->status;
+}
 
 #-----------------------#
-if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka == "on" && !in_array($from_id,$admin_ids)) {
+if (!in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka == "on" && !in_array($from_id,$admin_ids)) {
     $text_channel = "   
     ⚠️کاربر گرامی ؛ شما عضو چنل ما نیستید
     ❗️@".$channels['link']."
@@ -116,8 +150,14 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
         خوش آمدی
         ";
         sendmessage($from_id, $text, $keyboard);
-        $connect->query("INSERT INTO user (id , step,limit_usertest) VALUES ('$from_id', 'none','$limit_usertest')");
+        $connect->query("INSERT INTO user (id , step,limit_usertest,Processing_value) VALUES ('$from_id', 'none','$limit_usertest','none')");
     }
+if ($text == "🏠 بازگشت به منوی اصلی") {
+    $textback = "به صفحه اصلی بازگشتید!";
+    sendmessage($from_id, $textback, $keyboard);
+    $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
+    return;
+}
     if ($text == "📊  اطلاعات سرویس") {
         $textinfo = "
         نام کاربری خود را ارسال نمایید
@@ -129,8 +169,8 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
         sendmessage($from_id, $textinfo, $backuser);
         $connect->query("UPDATE user SET step = 'getusernameinfo' WHERE id = '$from_id'");
     }
-    if ($user['step'] == "getusernameinfo" && $text != "🏠 بازگشت به منوی اصلی") {
-        if (!preg_match('~^[a-z][a-z\d_]{3,32}$~i', $text)){
+if ($user['step'] == "getusernameinfo"){
+    if (!preg_match('~^[a-z][a-z\d_]{3,32}$~i', $text)){
         $textusernameinva = " 
                 ❌نام کاربری نامعتبر است
             
@@ -139,8 +179,17 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
         sendmessage($from_id, $textusernameinva, $backuser);
         $connect->query("UPDATE user SET step = 'getusernameinfo' WHERE id = '$from_id'");
         return;
-        }
-            $data_useer = getuser($text);
+    }
+
+    $connect->query("UPDATE user SET Processing_value = '$text' WHERE id = '$from_id'");
+    sendmessage($from_id, "🌏 موقعیت سرویس خود را انتخاب نمایید.", $list_marzban_panel_user);
+    $connect->query("UPDATE user SET step = 'getdata' WHERE id = '$from_id'");
+}
+
+    if ($user['step'] == "getdata") {
+        $marzban_list_get = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM marzban_panel WHERE name_panel = '$text'"));
+        $Check_token = token_panel($marzban_list_get['url_panel'],$marzban_list_get['username_panel'],$marzban_list_get['password_panel']);
+            $data_useer = getuser($Processing_value,$Check_token['access_token'],$marzban_list_get['url_panel']);
             if ($data_useer['detail'] == "User not found") {
                 sendmessage($from_id, "نام کاربری وجود ندارد", $keyboard);
                 $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
@@ -218,19 +267,29 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
     🛑 در صورت رعایت نکردن موارد بالا با خطا مواجه خواهید شد
           ";
             sendmessage($from_id, $textusertest, $backuser);
-            $connect->query("UPDATE user SET step = 'crateusertest' WHERE id = '$from_id'");
+            $connect->query("UPDATE user SET step = 'selectloc' WHERE id = '$from_id'");
+    }
+    if ($user['step'] == "selectloc"){
+        if (!preg_match('/^[a-zA-Z0-9_]{3,32}$/', $text)) {
+            sendmessage($from_id, "⛔️ نام کاربری معتبر نیست", $backuser);
+            $connect->query("UPDATE user SET step = 'selectloc' WHERE id = '$from_id'");
+            return;
+        }
+            $connect->query("UPDATE user SET Processing_value = '$text' WHERE id = '$from_id'");
+        sendmessage($from_id, "🌏 موقعیت سرویس تست را انتخاب نمایید.", $list_marzban_panel_user);
+        $connect->query("UPDATE user SET step = 'crateusertest' WHERE id = '$from_id'");
     }
 #-----------------------------------#
-    if ($user['step'] == "crateusertest" && $text != "🏠 بازگشت به منوی اصلی") {
-        if (preg_match('/^[a-zA-Z0-9_]{3,32}$/', $text)) {
-            $Allowedusername = getuser($text);
+    if ($user['step'] == "crateusertest") {
+        $marzban_list_get = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM marzban_panel WHERE name_panel = '$text'"));
+        $Check_token = token_panel($marzban_list_get['url_panel'],$marzban_list_get['username_panel'],$marzban_list_get['password_panel']);
+            $Allowedusername = getuser($Processing_value,$Check_token['access_token'],$marzban_list_get['url_panel']);;
             if (empty($Allowedusername['username'])) {
                 $date = strtotime("+" . $time . "hours");
                 $timestamp = strtotime(date("Y-m-d H:i:s", $date));
-                $username = $text;
                 $expire = $timestamp;
                 $data_limit = $val * 1000000;
-                $config_test = adduser($username, $expire, $data_limit);
+                $config_test = adduser($Processing_value, $expire, $data_limit,$Check_token['access_token'],$marzban_list_get['url_panel']);
                 $data_test = json_decode($config_test, true);
                 $output_config_link = $data_test['subscription_url'];
                 $textcreatuser = "
@@ -249,17 +308,7 @@ if ( !in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka =
                 $limit_usertest = $user['limit_usertest'] - 1;
                 $connect->query("UPDATE user SET limit_usertest = '$limit_usertest' WHERE id = '$from_id'");
             }
-        } else {
-            if ($text != "🏠 بازگشت به منوی اصلی") {
-                sendmessage($from_id, "⛔️ نام کاربری معتبر نیست", $keyboard);
-            }
             $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
-        }
-    }
-    if ($text == "🏠 بازگشت به منوی اصلی") {
-        $textback = "به صفحه اصلی بازگشتید!";
-        sendmessage($from_id, $textback, $keyboard);
-        $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
     }
 
 //------------------------------------------------------------------------------
@@ -274,6 +323,7 @@ if($text == "panel"){
 if ($text == "🏠 بازگشت به منوی مدیریت"){
     sendmessage($from_id,"به پنل ادمین بازگشتید! ",$keyboardadmin);
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
+    return;
 }
 if ($text =="🔑 روشن / خاموش کردن قفل کانال"){
 if($Channel_locka=="off"){
@@ -293,13 +343,18 @@ if($text =="📣 تنظیم کانال جوین اجباری") {
     sendmessage($from_id, $text_channel, $backadmin);
     $connect->query("UPDATE user SET step = 'addchannel' WHERE id = '$from_id'");
 }
-if($user['step'] == "addchannel" && $text !="🏠 بازگشت به منوی مدیریت"){
+if($user['step'] == "addchannel"){
     $text_set_channel="
     🔰 کانال با موفقیت تنظیم گردید.
      برای  روشن کردن عضویت اجباری از منوی ادمین دکمه 📣 تنظیم کانال جوین اجباری  را بزنید
     ";
     sendmessage($from_id, $text_set_channel, $keyboardadmin);
-    $connect->query("UPDATE channels SET link = '$text'");
+    if (isset($channels['link'])) {
+        $connect->query("UPDATE channels SET link = '$text'");
+    }
+    else{
+        $connect->query("INSERT INTO channels (link,Channel_lock) VALUES ('$text','off')");
+    }
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
 
 }
@@ -307,7 +362,7 @@ if ($text == "👨‍💻 اضافه کردن ادمین"){
     sendmessage($from_id, "🌟آیدی عددی ادمین جدید را ارسال نمایید.", $backadmin);
     $connect->query("UPDATE user SET step = 'addadmin' WHERE id = '$from_id'");
 }
-if($user['step'] == "addadmin" && $text !="🏠 بازگشت به منوی مدیریت"){
+if($user['step'] == "addadmin"){
     sendmessage($from_id, "🥳ادمین با موفقیت اضافه گردید", $keyboardadmin);
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
     $connect->query("INSERT INTO admin (id_admin) VALUES ('$text')");
@@ -317,7 +372,7 @@ if($text == "❌ حذف ادمین"){
     sendmessage($from_id, "🛑 آیدی عددی ادمین را ارسال کنید.", $backadmin);
     $connect->query("UPDATE user SET step = 'deleteadmin' WHERE id = '$from_id'");
 }
-if ($user['step'] == "deleteadmin" && $text !="🏠 بازگشت به منوی مدیریت"){
+if ($user['step'] == "deleteadmin"){
     if (!is_numeric($text) || !in_array($text,$admin_ids))return;
     sendmessage($from_id, "✅ ادمین با موفقیت حذف گردید.", $keyboardadmin);
     $connect->query("DELETE FROM admin WHERE id_admin = '$text'");
@@ -332,26 +387,26 @@ if ($text == "➕محدودیت ساخت اکانت تست برای کاربر")
     sendmessage($from_id, $text_add_user_admin, $backadmin);
     $connect->query("UPDATE user SET step = 'add_limit_usertest_foruser' WHERE id = '$from_id'");
 }
-if ($user['step'] == "add_limit_usertest_foruser" && $text !="🏠 بازگشت به منوی مدیریت") {
+if ($user['step'] == "add_limit_usertest_foruser") {
     if (!in_array($text,$users_ids)){
         sendmessage($from_id,"کاربری با این شناسه یافت نشد",$backadmin);
         return;
     }
     sendmessage($from_id, "آیدی عددی دریافت شد لطفا تعداد ساخت اکانت تست را ارسال کنید", $backadmin);
-    file_put_contents("data/value",$text);
+    $connect->query("UPDATE user SET Processing_value = '$text' WHERE id = '$from_id'");
     $connect->query("UPDATE user SET step = 'get_number_limit' WHERE id = '$from_id'");
 }
-if ($user['step'] == "get_number_limit" && $text !="🏠 بازگشت به منوی مدیریت") {
+if ($user['step'] == "get_number_limit") {
     sendmessage($from_id, "محدودیت برای کاربر تنظیم گردید.", $keyboardmarzban);
     $id_user_set = $text;
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
-    $connect->query("UPDATE user SET limit_usertest = '$text' WHERE id = '$value_def'");
+    $connect->query("UPDATE user SET limit_usertest = '$text' WHERE id = '$Processing_value'");
 }
 if ($text == "➕محدودیت ساخت اکانت تست برای همه"){
     sendmessage($from_id, "تعداد ساخت اکانت تست را  وارد نمایید.", $backadmin);
     $connect->query("UPDATE user SET step = 'limit_usertest_allusers' WHERE id = '$from_id'");
 }
-if ($user['step'] == "limit_usertest_allusers"  && $text !="🏠 بازگشت به منوی مدیریت"){
+if ($user['step'] == "limit_usertest_allusers"){
     sendmessage($from_id, "محدودیت ساخت اکانت برای تمام کاربران تنظیم شد", $keyboardmarzban);
     $connect->query("UPDATE user SET limit_usertest = '$text'");
     $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
@@ -374,7 +429,13 @@ if ($text == "🖥 تنظیمات پنل مرزبان"){
     sendmessage($from_id, "یکی از گزینه های زیر را انتخاب کنید", $keyboardmarzban);
 }
 if($text == "🔌 وضعیت پنل"){
-    $Check_token = token_panel();
+    sendmessage($from_id, "پنل خود را انتخاب کنید", $json_list_marzban_panel);
+    $connect->query("UPDATE user SET step = 'get_panel' WHERE id = '$from_id'");
+
+}
+if ($user['step'] == "get_panel"){
+    $marzban_list_get = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM marzban_panel WHERE name_panel = '$text'"));
+    $Check_token = token_panel($marzban_list_get['url_panel'],$marzban_list_get['username_panel'],$marzban_list_get['password_panel']);
     if (isset($Check_token['access_token'])){
         $Condition_marzban = "✅ پنل متصل است";
     }
@@ -384,14 +445,16 @@ if($text == "🔌 وضعیت پنل"){
     else {
         $Condition_marzban= "امکان اتصال به پنل مرزبان وجود ندارد.😔";
     }
-    $System_Stats = Get_System_Stats();
+    $System_Stats = Get_System_Stats($marzban_list_get['url_panel'],$Check_token['access_token']);
     $active_users = $System_Stats['users_active'];
     $text_marzban= "
-    اطلاعات پنل شما: 
-        🖥 وضعیت اتصال پنل مرزبان  : $Condition_marzban
-        👤 تعداد کاربران فعال  : $active_users
+    اطلاعات پنل شما👇:
+         
+🖥 وضعیت اتصال پنل مرزبان  :$Condition_marzban
+👤 تعداد کاربران فعال  :$active_users
     ";
     sendmessage($from_id, $text_marzban, $keyboardmarzban);
+    $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
 }
 if ($text =="📜 مشاهده لیست  ادمین ها"){
     foreach ($admin_ids as $admin){
@@ -401,4 +464,49 @@ if ($text =="📜 مشاهده لیست  ادمین ها"){
     آیدی عددی ادمین ها: 
     $List_admin";
     sendmessage($from_id, $list_admin_text, $keyboardadmin);
+}
+
+if ($text == "🖥 اضافه کردن پنل  مرزبان"){
+    $text_add_panel = "
+    برای اضافه کردن پنل مرزبان به ربات ابتدا یک نام برای پنل خود ارسال کنید
+    
+ ⚠️ توجه : نام پنل نامی است که  در هنگام انجام عملیات جستجو  پنل از طریق نام است.
+    ";
+    sendmessage($from_id , $text_add_panel,$backadmin);
+    $connect->query("UPDATE user SET step = 'add_name_panel' WHERE id = '$from_id'");
+}
+if ($user['step'] == "add_name_panel"){
+    $connect->query("INSERT INTO marzban_panel (name_panel) VALUES ('$text')");
+    $text_add_url_panel= "
+        🔗نام پنل ذخیره شد حالا  آدرس  پنل خود ارسال کنید
+    
+ ⚠️ توجه :
+🔸 آدرس پنل باید  بدون dashboard ارسال شود.
+🔹 در صورتی که  پورت پنل 443 است پورت را نباید وارد کنید.    
+        ";
+    sendmessage($from_id , $text_add_url_panel,$backadmin);
+    $connect->query("UPDATE user SET step = 'add_link_panel' WHERE id = '$from_id'");
+    $connect->query("UPDATE user SET Processing_value = '$text' WHERE id = '$from_id'");
+}
+if ($user['step'] == "add_link_panel"){
+    if (filter_var($text, FILTER_VALIDATE_URL)) {
+        sendmessage($from_id, "👤 آدرس پنل ذخیره شد حالا نام کاربری  را ارسال کنید.", $backadmin);
+        $connect->query("UPDATE user SET step = 'add_username_panel' WHERE id = '$from_id'");
+        $connect->query("UPDATE marzban_panel SET url_panel = '$text' WHERE name_panel = '$Processing_value'");
+    }
+    else{
+        sendmessage($from_id, "🔗 آدرس دامنه نامعتبر است", $backadmin);
+
+    }
+}
+if ($user['step'] == "add_username_panel"){
+    sendmessage($from_id, "🔑 نام کاربری ذخیره شد  در پایان رمز عبور پنل مرزبان خود را وارد نمایید.", $backadmin);
+    $connect->query("UPDATE user SET step = 'add_password_panel' WHERE id = '$from_id'");
+    $connect->query("UPDATE marzban_panel SET username_panel = '$text' WHERE name_panel = '$Processing_value'");
+}
+if ($user['step'] == "add_password_panel"){
+    sendmessage($from_id, "تبریک پنل شما با موفقیت اضافه گردید.", $backadmin);
+    sendmessage($from_id, "🥳", $keyboardmarzban);
+    $connect->query("UPDATE user SET step = 'home' WHERE id = '$from_id'");
+    $connect->query("UPDATE marzban_panel SET password_panel = '$text' WHERE name_panel = '$Processing_value'");
 }
