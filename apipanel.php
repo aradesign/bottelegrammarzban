@@ -1,34 +1,7 @@
 <?php
 include('config.php');
 #-----------------------------#
-function getuser($username)
-{
-    global $url_panel;
-    $token = token_panel();
-    $usernameac = $username;
-    $url =  $url_panel.'/api/user/' . $usernameac;
-    $header_value = 'Bearer ';
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_HTTPGET, true);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-        'Accept: application/json',
-        'Authorization: ' . $header_value .  $token['access_token']
-    ));
-
-    $output = curl_exec($ch);
-    curl_close($ch);
-    $data_useer = json_decode($output, true);
-    return $data_useer;
-}
-
-#-----------------------------#
-function token_panel(){
-    global $url_panel;
-    global $username_panel;
-    global $password_panel;
+function token_panel($url_panel,$username_panel,$password_panel){
     $url_get_token = $url_panel.'/api/admin/token';
     $data_token = array(
         'username' => $username_panel,
@@ -51,11 +24,33 @@ function token_panel(){
     $body = json_decode( $token, true);
     return $body;
 }
-function adduser($username,$expire,$data_limit)
+#-----------------------------#
+
+function getuser($username,$token,$url_panel)
 {
- $token = token_panel();
-    global $url_panel;
-    $url = $url_panel."/api/uer";
+    $usernameac = $username;
+    $url =  $url_panel.'/api/user/' . $usernameac;
+    $header_value = 'Bearer ';
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_HTTPGET, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        'Accept: application/json',
+        'Authorization: ' . $header_value .  $token
+    ));
+
+    $output = curl_exec($ch);
+    curl_close($ch);
+    $data_useer = json_decode($output, true);
+    return $data_useer;
+}
+
+#-----------------------------#
+function adduser($username,$expire,$data_limit,$token,$url_panel)
+{
+    $url = $url_panel."/api/user";
     $header_value = 'Bearer ';
     $data = array(
         "proxies" => array(
@@ -76,7 +71,7 @@ function adduser($username,$expire,$data_limit)
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Accept: application/json',
-        'Authorization: ' . $header_value .  $token['access_token'],
+        'Authorization: ' . $header_value .  $token,
         'Content-Type: application/json'
     ));
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
@@ -87,9 +82,7 @@ function adduser($username,$expire,$data_limit)
     return $response;
 }
 //----------------------------------
-function Get_System_Stats(){
-    global $url_panel;
-    $token = token_panel();
+function Get_System_Stats($url_panel,$token){
     $url =  $url_panel.'/api/system';
     $header_value = 'Bearer ';
 
@@ -99,7 +92,7 @@ function Get_System_Stats(){
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
         'Accept: application/json',
-        'Authorization: ' . $header_value .  $token['access_token']
+        'Authorization: ' . $header_value .  $token
     ));
 
     $output = curl_exec($ch);
