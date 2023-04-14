@@ -45,13 +45,7 @@ try {
     $result = $connect->query("SHOW TABLES LIKE 'channels'");
     $table_exists = ($result->num_rows > 0);
 
-    if ($table_exists) {
-        $channels = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM channels"));
-        if (!isset($channels['link'])) {
-            $connect->query("INSERT INTO channels (link,Channel_lock) VALUES ('test','off')");
-            echo "table channels updated ✅ </br>";
-        }
-    } else {
+    if (!$table_exists) {
         $connect->query("CREATE TABLE channels (
 Channel_lock varchar(200) NOT NULL,
 link varchar(200) NOT NULL )");
