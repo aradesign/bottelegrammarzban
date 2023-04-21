@@ -19,6 +19,21 @@ try {
 
 //-----------------------------------------------------------------
 try {
+    $result = $connect->query("SHOW TABLES LIKE 'setting'");
+    $table_exists = ($result->num_rows > 0);
+
+    if (!$table_exists) {
+        $connect->query("CREATE TABLE setting (
+        count_usertest varchar(5000) NOT NULL)");
+        echo "table setting✅</br>"
+                $connect->query("INSERT INTO setting (count_usertest) VALUES ('0')");;
+    }
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}
+
+//-----------------------------------------------------------------
+try {
     $result = $connect->query("SHOW TABLES LIKE 'admin'");
     $table_exists = ($result->num_rows > 0);
     if ($table_exists) {
