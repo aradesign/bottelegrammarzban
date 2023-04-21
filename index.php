@@ -114,6 +114,7 @@ foreach($namepanel as $button) {
 $list_marzban_panel_user = json_encode($list_marzban_panel_users);
 #-----------------------#
 $user = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM user WHERE id = '$from_id' LIMIT 1"));
+$setting = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM setting"));
 $Channel_locka_get = mysqli_fetch_assoc(mysqli_query($connect, "SELECT Channel_lock FROM channels"));
 $Channel_locka = $Channel_locka_get['Channel_lock'];
 $id_admin = mysqli_query($connect, "SELECT * FROM admin");
@@ -342,10 +343,15 @@ if ($user['step'] == "getusernameinfo"){
                 $stmt->bind_param("ss", $limit_usertest, $from_id);
                 $stmt->execute();
             }
+            $count_usertest = $setting['count_usertest']+1;
+        $stmt = $connect->prepare("UPDATE setting SET count_usertest = ?");
+        $stmt->bind_param("s", $count_usertest);
+        $stmt->execute();
         $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
         $step = 'home';
         $stmt->bind_param("ss", $step, $from_id);
-        $stmt->execute();    }
+        $stmt->execute();
+    }
 
 //------------------------------------------------------------------------------
 
@@ -513,9 +519,10 @@ if ($text == "📊 آمار ربات"){
     $stmt->execute();
     $result = $stmt->get_result();
     $statistics = $result->fetch_array(MYSQLI_NUM);
+    $count_usertest_var =$setting['count_usertest'];
     $text_statistics = "
     👤 تعداد کاربران : $statistics[0]
-        ";
+🖥 تعداد اکانت تست گرفته شده:  $count_usertest_var        ";
     sendmessage($from_id, "$text_statistics", $keyboardadmin);
 }
 if ($text == "🖥 تنظیمات پنل مرزبان"){
