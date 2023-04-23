@@ -561,3 +561,20 @@ if ($user['step'] == "add_password_panel") {
     $stmt->bind_param("ss", $text, $Processing_value);
     $stmt->execute();
 }
+if ($text == "❌ حذف پنل"){
+    sendmessage($from_id, "پنلی که میخواهید حذف کنید را انتخاب کنید.", $json_list_marzban_panel);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'removepanel';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "removepanel"){
+    sendmessage($from_id, "پنل با موفقیت حذف گردید.", $keyboardmarzban);
+    $stmt = $connect->prepare("DELETE FROM marzban_panel WHERE name_panel = ?");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
