@@ -4,7 +4,7 @@ pv  => @gholipour3
 channel => @botpanelmarzban
 */
 
-global $connect, $keyboard, $backuser, $list_marzban_panel_user, $keyboardadmin, $channelkeyboard, $backadmin, $keyboardmarzban, $json_list_marzban_panel;
+global $connect, $keyboard, $backuser, $list_marzban_panel_user, $keyboardadmin, $channelkeyboard, $backadmin, $keyboardmarzban, $json_list_marzban_panel, $sendmessageuser, $textbot;
 require_once 'config.php';
 require_once 'botapi.php';
 require_once 'apipanel.php';
@@ -18,10 +18,9 @@ $from_id = $update['message']['from']['id'] ?? $update['callback_query']['from']
 $chat_id = $update["message"]["chat"]["id"] ?? $update["callback_query"]["message"]["chat"]["id"] ?? 0;
 $Channel_status = $update["message"]["chat"]["type"] ?? '';
 $text = $update["message"]["text"] ?? $update["callback_query"]["message"]["text"] ?? '';
-$first_name = $update["message"]["from"]["first_name"] ?? '';
 $data = $update["callback_query"]["data"] ?? '';
 $query_id = $update["callback_query"]["id"] ?? 0;
-$message_id = $update["callback_query"]["message"]["message_id"] ?? 0;
+$message_id = $update["message"]["message_id"] ?? $update["callback_query"]["message"]["message_id"] ?? 0;
 
 #-----------------------#
 $telegram_ip_ranges = [
@@ -39,7 +38,9 @@ if (!$ok) die("false");
 #-----------------------#
 $query = sprintf("SELECT * FROM user WHERE id = '%d' LIMIT 1", $from_id);
 $result = mysqli_query($connect, $query);
-$user = mysqli_fetch_assoc($result);$setting = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM setting"));
+$user = mysqli_fetch_assoc($result);
+$setting = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM setting"));
+$textdatabot = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM textbot"));
 $Channel_locka_get = mysqli_fetch_assoc(mysqli_query($connect, "SELECT Channel_lock FROM channels"));
 $Channel_locka = $Channel_locka_get['Channel_lock'];
 $id_admin = mysqli_query($connect, "SELECT * FROM admin");
@@ -47,6 +48,7 @@ while ($row = mysqli_fetch_assoc($id_admin)) {
     $admin_ids[] = $row['id_admin'];
 }
 $id_user = mysqli_query($connect, "SELECT * FROM user");
+$users_ids = [];
 while ($row = mysqli_fetch_assoc($id_user)) {
     $users_ids[] = $row['id'];
 }
@@ -71,11 +73,7 @@ if (!in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka ==
     return;
 }
 if ($text == "/start") {
-    $text = "
-        سلام $first_name 
-        خوش آمدی
-        ";
-    sendmessage($from_id, $text, $keyboard);
+    sendmessage($from_id, $textdatabot['text_start'], $keyboard);
     $connect->query("INSERT IGNORE INTO user (id , step,limit_usertest,Processing_value) VALUES ('$from_id', 'none',".limit_usertest.",'none')");
 }
 if ($text == "🏠 بازگشت به منوی اصلی") {
@@ -87,15 +85,8 @@ if ($text == "🏠 بازگشت به منوی اصلی") {
     $stmt->execute();
     return;
 }
-if ($text == "📊  اطلاعات سرویس") {
-    $textinfo = "
-        نام کاربری خود را ارسال نمایید
-            
-    ⚠️ نام کاربری باید بدون کاراکترهای اضافه مانند @ ، فاصله ، خط تیره باشد. 
-    ⚠️ نام کاربری باید انگلیسی باشد
-    
-        ";
-    sendmessage($from_id, $textinfo, $backuser);
+if ($text == $textdatabot['text_info']) {
+    sendmessage($from_id, $textdatabot['text_dec_info'], $backuser);
     $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
     $step = 'getusernameinfo';
     $stmt->bind_param("ss", $step, $from_id);
@@ -194,24 +185,12 @@ if ($user['step'] == "getdata") {
     $stmt->bind_param("ss", $step, $from_id);
     $stmt->execute();
 }
-if ($text == "🔑 اکانت تست") {
+if ($text == $textdatabot['text_usertest']) {
     if ($user['limit_usertest'] == 0) {
         sendmessage($from_id, "⚠️ محدودیت ساخت اشتراک تست شما به پایان رسید.", $keyboard);
         return;
     }
-    $textusertest = "
-          
-            👤برای ساخت اشتراک تست یک نام کاربری انگلیسی ارسال نمایید.
-    
-    ⚠️ نام کاربری باید دارای شرایط زیر باشد
-    
-    1- فقط انگلیسی باشد و حروف فارسی نباشد
-    2- کاراکترهای اضافی مانند @،#،% و... را نداشته باشد.
-    3 - نام کاربری باید بدون فاصله باشد.
-    
-    🛑 در صورت رعایت نکردن موارد بالا با خطا مواجه خواهید شد
-          ";
-    sendmessage($from_id, $textusertest, $backuser);
+    sendmessage($from_id,$textdatabot['text_dec_usertest'], $backuser);
     $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
     $step = 'selectloc';
     $stmt->bind_param("ss", $step, $from_id);
@@ -239,7 +218,7 @@ if ($user['step'] == "selectloc") {
 if ($user['step'] == "crateusertest") {
     $marzban_list_get = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM marzban_panel WHERE name_panel = '$text'"));
     $Check_token = token_panel($marzban_list_get['url_panel'], $marzban_list_get['username_panel'], $marzban_list_get['password_panel']);
-    $Allowedusername = getuser($Processing_value, $Check_token['access_token'], $marzban_list_get['url_panel']);;
+    $Allowedusername = getuser($Processing_value, $Check_token['access_token'], $marzban_list_get['url_panel']);
     if (empty($Allowedusername['username'])) {
         $date = strtotime("+" . time . "hours");
         $timestamp = strtotime(date("Y-m-d H:i:s", $date));
@@ -484,6 +463,7 @@ if ($user['step'] == "get_panel") {
     $stmt->execute();
 }
 if ($text == "📜 مشاهده لیست  ادمین ها") {
+    $List_admin = '';
     foreach ($admin_ids as $admin) {
         $List_admin .= "$admin \n";
     }
@@ -571,6 +551,152 @@ if ($text == "❌ حذف پنل"){
 elseif ($user['step'] == "removepanel"){
     sendmessage($from_id, "پنل با موفقیت حذف گردید.", $keyboardmarzban);
     $stmt = $connect->prepare("DELETE FROM marzban_panel WHERE name_panel = ?");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+if ($text == "📨 ارسال پیام به کاربر"){
+    sendmessage($from_id, "یکی از گزینه های زیر را انتخاب کنید", $sendmessageuser);
+}
+elseif ($text == "✉️ ارسال همگانی"){
+    sendmessage($from_id, "متن خود را ارسال کنید.", $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'gettextforsendall';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "gettextforsendall"){
+    foreach ($users_ids as $id){
+        sendmessage($id, $text, null);
+    }
+    sendmessage($from_id, "✅ پیام برای تمامی کاربرن ارسال شد.", $keyboardadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($text == "📤 فوروارد همگانی"){
+    sendmessage($from_id, "متن فورواردی خود را ارسال کنید.", $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'gettextforwardMessage';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "gettextforwardMessage"){
+    foreach ($users_ids as $id){
+        forwardMessage($from_id,$message_id,$id);
+    }
+    sendmessage($from_id, "✅ پیام برای تمامی کاربرن فوروارد شد.", $keyboardadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+//_________________________________________________
+if ($text  == "📝 تنظیم متون ربات"){
+    sendmessage($from_id, "یکی از گزینه های زیر را انتخاب کنید.", $textbot);
+}
+elseif ($text == "تنظیم متن دکمه شروع"){
+    $textstart = "
+    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن فعلی :
+     ".$textdatabot['text_start'];
+    sendmessage($from_id, $textstart, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'changetextstart';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "changetextstart"){
+    sendmessage($from_id, "✅ متن با موفقیت ذخیره شد", $textbot);
+    $stmt = $connect->prepare("UPDATE textbot SET text_start = ?");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($text == "تنظیم متن  دکمه 📊  اطلاعات سرویس"){
+    $textstart = "
+    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن فعلی :
+     ".$textdatabot['text_info'];
+    sendmessage($from_id, $textstart, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'changetextinfo';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "changetextinfo"){
+    sendmessage($from_id, "✅ متن با موفقیت ذخیره شد", $textbot);
+    $stmt = $connect->prepare("UPDATE textbot SET text_info = ?");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($text == "تنظیم متن دکمه 🔑 اکانت تست"){
+    $textstart = "
+    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن فعلی :
+     ".$textdatabot['text_usertest'];
+    sendmessage($from_id, $textstart, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'changetextusertest';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "changetextusertest"){
+    sendmessage($from_id, "✅ متن با موفقیت ذخیره شد", $textbot);
+    $stmt = $connect->prepare("UPDATE textbot SET text_usertest = ?");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($text == "📝 تنظیم متن توضیحات اطلاعات سرویس "){
+    $textstart = "
+    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن فعلی :
+    ``` ".$textdatabot['text_dec_info']."```";
+    sendmessage($from_id, $textstart, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'changetextinfodec';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "changetextinfodec"){
+    sendmessage($from_id, "✅ متن با موفقیت ذخیره شد", $textbot);
+    $stmt = $connect->prepare("UPDATE textbot SET text_dec_info = ?");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($text == "📝 تنظیم متن توضیحات  اکانت تست"){
+    $textstart = "
+    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن فعلی :
+    ``` ".$textdatabot['text_dec_usertest']."```";
+    sendmessage($from_id, $textstart, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'text_dec_usertest';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "text_dec_usertest"){
+    sendmessage($from_id, "✅ متن با موفقیت ذخیره شد", $textbot);
+    $stmt = $connect->prepare("UPDATE textbot SET text_dec_usertest = ?");
     $stmt->bind_param("s", $text);
     $stmt->execute();
     $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
