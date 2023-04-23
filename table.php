@@ -1,4 +1,5 @@
 <?php
+global $connect;
 include('config.php');
 //-----------------------------------------------------------------
 try {
@@ -16,7 +17,40 @@ try {
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
 }
-
+//-----------------------------------------------------------------
+try {
+    $result = $connect->query("SHOW TABLES LIKE 'textbot'");
+    $table_exists = ($result->num_rows > 0);
+      $text_info = "
+      نام کاربری خود را ارسال نمایید
+            
+    ⚠️ نام کاربری باید بدون کاراکترهای اضافه مانند @ ، فاصله ، خط تیره باشد. 
+    ⚠️ نام کاربری باید انگلیسی باشد
+      ";
+      $text_usertest = "
+      👤برای ساخت اشتراک تست یک نام کاربری انگلیسی ارسال نمایید.
+    
+    ⚠️ نام کاربری باید دارای شرایط زیر باشد
+    
+    1- فقط انگلیسی باشد و حروف فارسی نباشد
+    2- کاراکترهای اضافی مانند @،#،% و... را نداشته باشد.
+    3 - نام کاربری باید بدون فاصله باشد.
+    
+    🛑 در صورت رعایت نکردن موارد بالا با خطا مواجه خواهید شد
+      ";
+    if (!$table_exists) {
+        $connect->query("CREATE TABLE textbot (
+        text_info varchar(100000) NOT NULL,
+        text_dec_info varchar(100000) NOT NULL,
+        text_usertest varchar(100000) NOT NULL,
+        text_dec_usertest varchar(100000) NOT NULL,
+        text_start varchar(100000) NOT NULL)");
+        echo "table textbot✅</br>";
+        $connect->query("INSERT INTO textbot (text_start,text_info,text_usertest,text_dec_info,text_dec_usertest) VALUES ('سلام خوش آمدید','📊  اطلاعات سرویس','🔑 اکانت تست','$text_info','$text_usertest')");
+    }
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}
 //-----------------------------------------------------------------
 try {
     $result = $connect->query("SHOW TABLES LIKE 'setting'");
@@ -25,8 +59,8 @@ try {
     if (!$table_exists) {
         $connect->query("CREATE TABLE setting (
         count_usertest varchar(5000) NOT NULL)");
-        echo "table setting✅</br>"
-                $connect->query("INSERT INTO setting (count_usertest) VALUES ('0')");;
+        echo "table setting✅</br>";
+                $connect->query("INSERT INTO setting (count_usertest) VALUES ('0')");
     }
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
