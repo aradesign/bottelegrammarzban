@@ -704,3 +704,41 @@ elseif ($user['step'] == "text_dec_usertest"){
     $stmt->bind_param("ss", $step, $from_id);
     $stmt->execute();
 }
+//_________________________________________________
+if ($text == "✍️ ارسال پیام برای یک کاربر"){
+    sendmessage($from_id, "متن خود را ارسال کنید", $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'sendmessagetext';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "sendmessagetext"){
+    $stmt = $connect->prepare("UPDATE user SET Processing_value = ? WHERE id = ?");
+    $stmt->bind_param("ss", $text, $from_id);
+    $stmt->execute();
+    sendmessage($from_id, "✅ متن دریافت شد  حالا آیدی عددی کاربر را ارسال کنید.", $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'sendmessagetid';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+
+}
+elseif ($user['step'] == "sendmessagetid"){
+    if (!in_array($text, $users_ids)) {
+        sendmessage($from_id, "کاربری با این شناسه یافت نشد", $backadmin);
+        return;
+    }
+    $textsendadmin = "
+    👤 یک پیام از طرف ادمین ارسال شده است  
+
+متن پیام :
+$Processing_value
+    ";
+    sendmessage($text,  $textsendadmin, null);
+    sendmessage($from_id, "✅ پیام ارسال شد", $keyboardadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+
+}
