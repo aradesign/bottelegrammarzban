@@ -1,18 +1,16 @@
 <?php
 //-----------------------------database-------------------------------
-$dbname = "databasename"; //  نام دیتابیس
-$username = "databasename"; // نام کاربری دیتابیس
-$password = 'password'; // رمز عبور دیتابیس
+$dbname = "whmcscom_bot"; //  Name db
+$username = "whmcscom_bot"; // Username db
+$password = '@LW,+Azw0aGn'; // Pass username db
 $connect = mysqli_connect("localhost", $username, $password, $dbname);
 //-----------------------------info-------------------------------
 
-defined('API_KEY') or define('API_KEY', 'توکن ربات');
-defined('limit_usertest') or define('limit_usertest', 10); // محدودیت ساخت اکانت تست برای تمامی کاربران
-defined('val') or define('val', 100); // حجم اکانت تست براساس مگابایت
-defined('time') or define('time', 1); //زمان پایان سرویس اکانت تست براساس ساعت
-defined('adminnumber') or define('adminnumber', 5522424631); // آیدی عددی پیشفرض ادمین
-
-
+defined('API_KEY') or define('API_KEY', '6175382184:AAGoQZayCEw8puKlM-bamoNiuqyfZehzsr4');
+defined('limit_usertest') or define('limit_usertest', 10);
+defined('val') or define('val', 100);
+defined('time') or define('time', 1);
+defined('adminnumber') or define('adminnumber', 5522424631);
 //-----------------------------text panel-------------------------------
 $keyboard = json_encode([
     'keyboard' => [
@@ -33,6 +31,7 @@ $keyboardmarzban =  json_encode([
         [['text' => "➕محدودیت ساخت اکانت تست برای کاربر"]],
         [['text' =>"➕محدودیت ساخت اکانت تست برای همه"]],
         [['text' => '🔌 وضعیت پنل '],['text' => "🖥 اضافه کردن پنل  مرزبان "]],
+        [['text' => "❌ حذف پنل"]],
         [['text' => "🏠 بازگشت به منوی مدیریت"]]
     ],
     'resize_keyboard' => true
@@ -88,3 +87,4 @@ foreach($namepanel as $button) {
     ];
 }
 $list_marzban_panel_user = json_encode($list_marzban_panel_users);
+
