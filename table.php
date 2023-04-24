@@ -62,9 +62,12 @@ try {
         text_usertest varchar(100000) NOT NULL,
         text_dec_usertest varchar(100000) NOT NULL,
         text_help varchar(1000) NOT NULL,
+        text_support varchar(1000) NOT NULL,
         text_start varchar(100000) NOT NULL)");
         echo "table textbot✅</br>";
-        $connect->query("INSERT INTO textbot (text_start,text_info,text_usertest,text_dec_info,text_dec_usertest,text_help) VALUES ('سلام خوش آمدید','📊  اطلاعات سرویس','🔑 اکانت تست','$text_info','$text_usertest','📚  آموزش')");
+        $helpt = "📚  آموزش";
+        $supportt = "☎️ پشتیبانی";
+        $connect->query("INSERT INTO textbot (text_start,text_info,text_usertest,text_dec_info,text_dec_usertest,text_help,text_support) VALUES ('سلام خوش آمدید','📊  اطلاعات سرویس','🔑 اکانت تست','$text_info','$text_usertest','$helpt','$supportt')");
     }
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
