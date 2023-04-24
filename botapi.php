@@ -1,5 +1,5 @@
 <?php
-include('config.php');
+//include('config.php');
 function telegram($method, $datas = [])
 {
     $url = "https://api.telegram.org/bot" . API_KEY . "/" . $method;
@@ -22,4 +22,26 @@ function sendmessage($chat_id,$text,$keyboard){
         'parse_mode' => "Markdown",
         
         ]);
+}
+
+function forwardMessage($chat_id,$message_id,$chat_id_user){
+    telegram('forwardMessage',[
+        'from_chat_id'=> $chat_id,
+        'message_id'=> $message_id,
+        'chat_id'=> $chat_id_user,
+    ]);
+}
+function sendphoto($chat_id,$photoid,$caption){
+    telegram('sendphoto',[
+        'chat_id' => $chat_id,
+        'photo'=> $photoid,
+        'caption'=> $caption,
+    ]);
+}
+function sendvideo($chat_id,$videoid,$caption){
+    telegram('sendvideo',[
+        'chat_id' => $chat_id,
+        'video'=> $videoid,
+        'caption'=> $caption,
+    ]);
 }
