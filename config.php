@@ -1,4 +1,8 @@
 <?php
+/*
+pv  => @gholipour3
+channel => @botpanelmarzban
+*/
 //-----------------------------database-------------------------------
 $dbname = "databasename"; //  نام دیتابیس
 $username = "username"; // نام کاربری دیتابیس
