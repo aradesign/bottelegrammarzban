@@ -13,9 +13,11 @@ defined('time') or define('time', 1); // زمان اکانت تست  واحد س
 defined('adminnumber') or define('adminnumber', 5522424631);// آیدی عددی ادمین
 //-----------------------------text panel-------------------------------
 $textdatabot = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM textbot"));
+$Feature_status_data = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM Feature_status"));
 $keyboard = json_encode([
     'keyboard' => [
-        [['text' => $textdatabot['text_info']], ['text' => $textdatabot['text_usertest']]]
+        [['text' => $textdatabot['text_info']], ['text' => $textdatabot['text_usertest']]],
+            [['text' => $textdatabot['text_help']]]
     ],
     'resize_keyboard' => true
 ]);
@@ -24,7 +26,8 @@ $keyboardadmin = json_encode([
         [['text' => "📯 تنظیمات کانال"],['text' => "📊 آمار ربات"]],
         [['text' => "📨 ارسال پیام به کاربر"],['text' => "📝 تنظیم متون ربات"]],
         [['text' => "👨‍💻 اضافه کردن ادمین"],['text' => "❌ حذف ادمین"]],
-        [['text' => "📜 مشاهده لیست  ادمین ها"],['text' => "🖥 تنظیمات پنل مرزبان"]]
+        [['text' => "📜 مشاهده لیست  ادمین ها"]],
+        [['text' => "📚 اضافه کردن آموزش "],['text' => "🖥 تنظیمات پنل مرزبان"]]
     ],
     'resize_keyboard' => true
 ]);
@@ -32,6 +35,14 @@ $sendmessageuser = json_encode([
     'keyboard' => [
         [['text' => "✉️ ارسال همگانی"],['text' => "📤 فوروارد همگانی"]],
         [['text' => "✍️ ارسال پیام برای یک کاربر"]],
+        [['text' => "🏠 بازگشت به منوی مدیریت"]]
+    ],
+    'resize_keyboard' => true
+]);
+$Feature_status = json_encode([
+    'keyboard' => [
+        [['text' => "قابلیت مشاهده اطلاعات اکانت"]],
+        [['text' => "قابلیت اکانت تست"],['text' => "قابلیت آموزش"]],
         [['text' => "🏠 بازگشت به منوی مدیریت"]]
     ],
     'resize_keyboard' => true
@@ -104,7 +115,27 @@ $textbot = json_encode([
         [['text' => "تنظیم متن دکمه 🔑 اکانت تست"]],
         [['text' => "📝 تنظیم متن توضیحات اطلاعات سرویس "]],
         [['text' => "📝 تنظیم متن توضیحات  اکانت تست"]],
+        [['text' => "متن دکمه 📚  آموزش"]],
         [['text' => "🏠 بازگشت به منوی مدیریت"]]
     ],
     'resize_keyboard' => true
 ]);
+//____________________________________________________
+$help = [];
+$helpname = mysqli_query($connect, "SELECT * FROM help");
+while($row = mysqli_fetch_assoc($helpname)) {
+    $help[] = [$row['name_os']];
+}
+$help_arr = [
+    'keyboard' => [],
+    'resize_keyboard' => true,
+];
+$help_arr['keyboard'][] = [
+    ['text' => "🏠 بازگشت به منوی اصلی"],
+];
+foreach($help as $button) {
+    $help_arr['keyboard'][] = [
+        ['text' => $button[0]]
+    ];
+}
+$json_list_help = json_encode($help_arr);
