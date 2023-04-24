@@ -23,6 +23,7 @@ $photoid = $photo ? $photo[count($photo)-1]["file_id"] : 0;
 $caption = $update["message"]["caption"] ?? '';
 $video = $update["message"]["video"] ?? 0;
 $videoid = $video ? $video["file_id"] : 0;
+$forward_from_id = $update["message"]["reply_to_message"]["forward_from"]["id"] ?? 0;
 $datain = $update["callback_query"]["data"] ?? '';
 #-----------------------#
 $telegram_ip_ranges = [
@@ -90,6 +91,7 @@ if ($text == "🏠 بازگشت به منوی اصلی") {
     $stmt->execute();
     return;
 }
+//________________________________________________________
 if ($text == $textdatabot['text_info']) {
     sendmessage($from_id, $textdatabot['text_dec_info'], $backuser);
     $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
@@ -263,75 +265,6 @@ if ($user['step'] == "crateusertest") {
     $stmt->bind_param("ss", $step, $from_id);
     $stmt->execute();
 }
-
-//_________________________________________________
-if ($text == "📚 اضافه کردن آموزش") {
-    $text_add_help_name = "
-    برای اضافه کردن   آموزش  یک نام  ارسال کنید  
- ⚠️ توجه : نام آموزش نامی است که کاربر در لیست مشاهده می کند.
-    ";
-    sendmessage($from_id, $text_add_help_name, $backadmin);
-    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
-    $step = 'add_name_help';
-    $stmt->bind_param("ss", $step, $from_id);
-    $stmt->execute();
-}
-elseif ($user['step'] == "add_name_help") {
-    $stmt = $connect->prepare("INSERT IGNORE INTO help (name_os) VALUES (?)");
-    $stmt->bind_param("s", $text);
-    $stmt->execute();
-    $text_add_dec = "
-        🔗نام آموزش ذخیره شد حالا  توضیحات خود را ارسال کنید 
-    
- ⚠️ توجه :
-🔸 توضیحات میتوانید همراه با عکس یا فیلم ارسال کنید
-        ";
-    sendmessage($from_id, $text_add_dec, $backadmin);
-    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
-    $step = 'add_dec';
-    $stmt->bind_param("ss", $step, $from_id);
-    $stmt->execute();
-    $stmt = $connect->prepare("UPDATE user SET  Processing_value = ? WHERE id = ?");
-    $stmt->bind_param("ss", $text, $from_id);
-    $stmt->execute();
-}
-elseif ($user['step'] == "add_dec") {
-    if ($photo){
-        $stmt = $connect->prepare("UPDATE help SET  Media_os	 = ? WHERE name_os = ?");
-        $stmt->bind_param("ss", $photoid, $Processing_value);
-        $stmt->execute();
-        $stmt = $connect->prepare("UPDATE help SET  Description_os	 = ? WHERE name_os = ?");
-        $stmt->bind_param("ss", $caption, $Processing_value);
-        $stmt->execute();
-        $stmt = $connect->prepare("UPDATE help SET  type_Media_os	 = ? WHERE name_os = ?");
-        $type = "photo";
-        $stmt->bind_param("ss", $type , $Processing_value);
-        $stmt->execute();
-    }
-    elseif ($text){
-        $stmt = $connect->prepare("UPDATE help SET  Description_os	 = ? WHERE name_os = ?");
-        $stmt->bind_param("ss", $text, $Processing_value);
-        $stmt->execute();
-
-    }
-    elseif ($video){
-        $stmt = $connect->prepare("UPDATE help SET  Media_os	 = ? WHERE name_os = ?");
-        $stmt->bind_param("ss", $videoid, $Processing_value);
-        $stmt->execute();
-        $stmt = $connect->prepare("UPDATE help SET  Description_os	 = ? WHERE name_os = ?");
-        $stmt->bind_param("ss", $caption, $Processing_value);
-        $stmt->execute();
-        $stmt = $connect->prepare("UPDATE help SET  type_Media_os	 = ? WHERE name_os = ?");
-        $type = "video";
-        $stmt->bind_param("ss", $type , $Processing_value);
-        $stmt->execute();
-    }
-    sendmessage($from_id, "✅ آموزش با موفقیت ذخیره شد", $keyboardadmin  );
-    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
-    $step = 'home';
-    $stmt->bind_param("ss", $step, $from_id);
-    $stmt->execute();
-}
 //_________________________________________________
 if($text == "📚  آموزش"){
     sendmessage($from_id, "یکی از گزینه ها را انتخاب نمایید", $json_list_help );
@@ -353,9 +286,31 @@ elseif($user['step'] =="sendhelp"){
         sendmessage($from_id, $helpdata['Description_os'], $json_list_help );
     }
 }
-//------------------------------------------------------------------------------
 
-
+//________________________________________________________
+if ($text == $textdatabot['text_support']){
+    sendmessage($from_id,"☎️",$backuser);
+    $textSendSupport = "
+    پیام خود را ارسال کنید کنید :
+    ⚠️ برای دریافت پیام حتما باید فوروارد حساب کاربری تان باز باشد تا پاسخ ادمین را دریافت کنید.
+    ";
+    sendmessage($from_id,$textSendSupport,$backuser);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'gettextpm';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == 'gettextpm'){
+    sendmessage($from_id,"🚀 پیام شما ارسال شد منتظر پاسخ مدیریت باشید.",$keyboard);
+    foreach ($admin_ids as $id_admin){
+        sendmessage($id_admin,"📥  یک پیام از کاربر با شناسه ```$from_id``` دریافت شد برای پاسخ ریپلای بزنید  و پیام خود را ارسال کنید.",null);
+        forwardMessage($from_id,$message_id,$id_admin);
+    }
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
 
 #----------------admin------------------#
 if (!in_array($from_id, $admin_ids)) return;
@@ -512,11 +467,24 @@ if ($text == "📊 آمار ربات") {
     $stmt->execute();
     $result = $stmt->get_result();
     $statistics = $result->fetch_array(MYSQLI_NUM);
-    $count_usertest_var = $setting['count_usertest'];
-    $text_statistics = "
-    👤 تعداد کاربران : $statistics[0]
-🖥 تعداد اکانت تست گرفته شده:  $count_usertest_var        ";
-    sendmessage($from_id, "$text_statistics", $keyboardadmin);
+    #-------------------------#
+    $keyboardstatistics = json_encode([
+        'inline_keyboard' => [
+            [
+                ['text' => $statistics[0] , 'callback_data' => 'countusers'],
+                ['text' => '👤 تعداد کاربران', 'callback_data' => 'countusers'],
+            ],
+            [
+                ['text' => $setting['count_usertest'], 'callback_data' => 'count_usertest_var'],
+                ['text' => '🖥 مجموع اکانت تست', 'callback_data' => 'count_usertest_var'],
+            ],
+            [
+                ['text' => phpversion(), 'callback_data' => 'phpversion'],
+                ['text' => ' 👨‍💻 نسخه php  هاست', 'callback_data' => 'phpversion'],
+            ],
+        ]
+    ]);
+    sendmessage($from_id,"📈 آمار ربات شما", $keyboardstatistics);
 }
 if ($text == "🖥 تنظیمات پنل مرزبان") {
     sendmessage($from_id, "یکی از گزینه های زیر را انتخاب کنید", $keyboardmarzban);
@@ -818,6 +786,27 @@ elseif ($user['step'] == "text_help"){
     $stmt->bind_param("ss", $step, $from_id);
     $stmt->execute();
 }
+elseif ($text == "متن دکمه ☎️ پشتیبانی"){
+    $textstart = "
+    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن فعلی :
+    ".$textdatabot['text_support'];
+    sendmessage($from_id, $textstart, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'text_support';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "text_support"){
+    sendmessage($from_id, "✅ متن با موفقیت ذخیره شد", $textbot);
+    $stmt = $connect->prepare("UPDATE textbot SET text_support = ?");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
 //_________________________________________________
 if ($text == "✍️ ارسال پیام برای یک کاربر"){
     sendmessage($from_id, "متن خود را ارسال کنید", $backadmin);
@@ -854,4 +843,83 @@ $Processing_value
     $step = 'home';
     $stmt->bind_param("ss", $step, $from_id);
     $stmt->execute();
+}
+
+//_________________________________________________
+if ($text == "📚 اضافه کردن آموزش") {
+    $text_add_help_name = "
+    برای اضافه کردن   آموزش  یک نام  ارسال کنید  
+ ⚠️ توجه : نام آموزش نامی است که کاربر در لیست مشاهده می کند.
+    ";
+    sendmessage($from_id, $text_add_help_name, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'add_name_help';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "add_name_help") {
+    $stmt = $connect->prepare("INSERT IGNORE INTO help (name_os) VALUES (?)");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $text_add_dec = "
+        🔗نام آموزش ذخیره شد حالا  توضیحات خود را ارسال کنید 
+    
+ ⚠️ توجه :
+🔸 توضیحات میتوانید همراه با عکس یا فیلم ارسال کنید
+        ";
+    sendmessage($from_id, $text_add_dec, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'add_dec';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET  Processing_value = ? WHERE id = ?");
+    $stmt->bind_param("ss", $text, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "add_dec") {
+    if ($photo){
+        $stmt = $connect->prepare("UPDATE help SET  Media_os	 = ? WHERE name_os = ?");
+        $stmt->bind_param("ss", $photoid, $Processing_value);
+        $stmt->execute();
+        $stmt = $connect->prepare("UPDATE help SET  Description_os	 = ? WHERE name_os = ?");
+        $stmt->bind_param("ss", $caption, $Processing_value);
+        $stmt->execute();
+        $stmt = $connect->prepare("UPDATE help SET  type_Media_os	 = ? WHERE name_os = ?");
+        $type = "photo";
+        $stmt->bind_param("ss", $type , $Processing_value);
+        $stmt->execute();
+    }
+    elseif ($text){
+        $stmt = $connect->prepare("UPDATE help SET  Description_os	 = ? WHERE name_os = ?");
+        $stmt->bind_param("ss", $text, $Processing_value);
+        $stmt->execute();
+
+    }
+    elseif ($video){
+        $stmt = $connect->prepare("UPDATE help SET  Media_os	 = ? WHERE name_os = ?");
+        $stmt->bind_param("ss", $videoid, $Processing_value);
+        $stmt->execute();
+        $stmt = $connect->prepare("UPDATE help SET  Description_os	 = ? WHERE name_os = ?");
+        $stmt->bind_param("ss", $caption, $Processing_value);
+        $stmt->execute();
+        $stmt = $connect->prepare("UPDATE help SET  type_Media_os	 = ? WHERE name_os = ?");
+        $type = "video";
+        $stmt->bind_param("ss", $type , $Processing_value);
+        $stmt->execute();
+    }
+    sendmessage($from_id, "✅ آموزش با موفقیت ذخیره شد", $keyboardadmin  );
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+//_________________________________________________
+if($forward_from_id != 0){
+    $textSendAdminToUser = "
+    📩 یک پیام از سمت مدیریت برای شما ارسال گردید.
+
+متن پیام : 
+$text";
+    sendmessage($forward_from_id, $textSendAdminToUser, null);
+    sendmessage($from_id, "✅ پیام با موفقیت برای کاربر ارسال گردید.", null);
 }
