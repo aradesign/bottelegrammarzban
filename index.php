@@ -4,7 +4,7 @@ pv  => @gholipour3
 channel => @botpanelmarzban
 */
 
-global $connect, $keyboard, $backuser, $list_marzban_panel_user, $keyboardadmin, $channelkeyboard, $backadmin, $keyboardmarzban, $json_list_marzban_panel, $sendmessageuser, $textbot;
+global $connect, $keyboard, $backuser, $list_marzban_panel_user, $keyboardadmin, $channelkeyboard, $backadmin, $keyboardmarzban, $json_list_marzban_panel, $sendmessageuser, $textbot, $json_list_help;
 require_once 'config.php';
 require_once 'botapi.php';
 require_once 'apipanel.php';
@@ -15,13 +15,15 @@ require_once 'jdf.php';
 $update = json_decode(file_get_contents("php://input"), true);
 
 $from_id = $update['message']['from']['id'] ?? $update['callback_query']['from']['id'] ?? 0;
-$chat_id = $update["message"]["chat"]["id"] ?? $update["callback_query"]["message"]["chat"]["id"] ?? 0;
-$Channel_status = $update["message"]["chat"]["type"] ?? '';
+$Chat_type = $update["message"]["chat"]["type"] ?? '';
 $text = $update["message"]["text"] ?? $update["callback_query"]["message"]["text"] ?? '';
-$data = $update["callback_query"]["data"] ?? '';
-$query_id = $update["callback_query"]["id"] ?? 0;
 $message_id = $update["message"]["message_id"] ?? $update["callback_query"]["message"]["message_id"] ?? 0;
-
+$photo = $update["message"]["photo"] ?? 0;
+$photoid = $photo ? $photo[count($photo)-1]["file_id"] : 0;
+$caption = $update["message"]["caption"] ?? '';
+$video = $update["message"]["video"] ?? 0;
+$videoid = $video ? $video["file_id"] : 0;
+$datain = $update["callback_query"]["data"] ?? '';
 #-----------------------#
 $telegram_ip_ranges = [
     ['lower' => '149.154.160.0', 'upper' => '149.154.175.255'],
@@ -40,10 +42,12 @@ $query = sprintf("SELECT * FROM user WHERE id = '%d' LIMIT 1", $from_id);
 $result = mysqli_query($connect, $query);
 $user = mysqli_fetch_assoc($result);
 $setting = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM setting"));
+$helpdata = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM help"));
 $textdatabot = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM textbot"));
 $Channel_locka_get = mysqli_fetch_assoc(mysqli_query($connect, "SELECT Channel_lock FROM channels"));
 $Channel_locka = $Channel_locka_get['Channel_lock'];
 $id_admin = mysqli_query($connect, "SELECT * FROM admin");
+$admin_ids = [];
 while ($row = mysqli_fetch_assoc($id_admin)) {
     $admin_ids[] = $row['id_admin'];
 }
@@ -55,8 +59,9 @@ while ($row = mysqli_fetch_assoc($id_user)) {
 $Processing_value =  $user['Processing_value'];
 #---------channel--------------#
 $channels = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM channels  LIMIT 1"));
+$tch = '';
 if (isset($channels['link'])) {
-    $response = json_decode(file_get_contents('https://api.telegram.org/bot' . API_KEY . "/getChatMember?chat_id=@{$channels['link']}&user_id=$chat_id"));
+    $response = json_decode(file_get_contents('https://api.telegram.org/bot' . API_KEY . "/getChatMember?chat_id=@{$channels['link']}&user_id=$from_id"));
     $tch = $response->result->status;
 }
 
@@ -259,6 +264,95 @@ if ($user['step'] == "crateusertest") {
     $stmt->execute();
 }
 
+//_________________________________________________
+if ($text == "📚 اضافه کردن آموزش") {
+    $text_add_help_name = "
+    برای اضافه کردن   آموزش  یک نام  ارسال کنید  
+ ⚠️ توجه : نام آموزش نامی است که کاربر در لیست مشاهده می کند.
+    ";
+    sendmessage($from_id, $text_add_help_name, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'add_name_help';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "add_name_help") {
+    $stmt = $connect->prepare("INSERT IGNORE INTO help (name_os) VALUES (?)");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $text_add_dec = "
+        🔗نام آموزش ذخیره شد حالا  توضیحات خود را ارسال کنید 
+    
+ ⚠️ توجه :
+🔸 توضیحات میتوانید همراه با عکس یا فیلم ارسال کنید
+        ";
+    sendmessage($from_id, $text_add_dec, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'add_dec';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET  Processing_value = ? WHERE id = ?");
+    $stmt->bind_param("ss", $text, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "add_dec") {
+    if ($photo){
+        $stmt = $connect->prepare("UPDATE help SET  Media_os	 = ? WHERE name_os = ?");
+        $stmt->bind_param("ss", $photoid, $Processing_value);
+        $stmt->execute();
+        $stmt = $connect->prepare("UPDATE help SET  Description_os	 = ? WHERE name_os = ?");
+        $stmt->bind_param("ss", $caption, $Processing_value);
+        $stmt->execute();
+        $stmt = $connect->prepare("UPDATE help SET  type_Media_os	 = ? WHERE name_os = ?");
+        $type = "photo";
+        $stmt->bind_param("ss", $type , $Processing_value);
+        $stmt->execute();
+    }
+    elseif ($text){
+        $stmt = $connect->prepare("UPDATE help SET  Description_os	 = ? WHERE name_os = ?");
+        $stmt->bind_param("ss", $text, $Processing_value);
+        $stmt->execute();
+
+    }
+    elseif ($video){
+        $stmt = $connect->prepare("UPDATE help SET  Media_os	 = ? WHERE name_os = ?");
+        $stmt->bind_param("ss", $videoid, $Processing_value);
+        $stmt->execute();
+        $stmt = $connect->prepare("UPDATE help SET  Description_os	 = ? WHERE name_os = ?");
+        $stmt->bind_param("ss", $caption, $Processing_value);
+        $stmt->execute();
+        $stmt = $connect->prepare("UPDATE help SET  type_Media_os	 = ? WHERE name_os = ?");
+        $type = "video";
+        $stmt->bind_param("ss", $type , $Processing_value);
+        $stmt->execute();
+    }
+    sendmessage($from_id, "✅ آموزش با موفقیت ذخیره شد", $keyboardadmin  );
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+//_________________________________________________
+if($text == "📚  آموزش"){
+    sendmessage($from_id, "یکی از گزینه ها را انتخاب نمایید", $json_list_help );
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'sendhelp';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif($user['step'] =="sendhelp"){
+    $helpdata = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM help WHERE name_os = '$text'"));
+    if (strlen($helpdata['Media_os']) != 0){
+        if ($helpdata['type_Media_os'] == "video"){
+            sendvideo($from_id,$helpdata['Media_os'],$helpdata['Description_os']);
+        }
+        elseif ($helpdata['type_Media_os'] == "photo")
+            sendphoto($from_id,$helpdata['Media_os'],$helpdata['Description_os']);
+    }
+    else{
+        sendmessage($from_id, $helpdata['Description_os'], $json_list_help );
+    }
+}
 //------------------------------------------------------------------------------
 
 
@@ -307,16 +401,15 @@ if ($user['step'] == "addchannel") {
      برای  روشن کردن عضویت اجباری از منوی ادمین دکمه 📣 تنظیم کانال جوین اجباری  را بزنید
     ";
     sendmessage($from_id, $text_set_channel, $keyboardadmin);
-    if (isset($channels['link'])) {
+    if(isset($channels['link'])) {
         $stmt = $connect->prepare("UPDATE channels SET link = ?");
         $stmt->bind_param("s", $text);
-        $stmt->execute();
     } else {
         $stmt = $connect->prepare("INSERT INTO channels (link,Channel_lock) VALUES (?)");
         $Channel_lock = 'off';
         $stmt->bind_param("ss", $text, $Channel_lock);
-        $stmt->execute();
     }
+    $stmt->execute();
     $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
     $step = 'home';
     $stmt->bind_param("ss", $step, $from_id);
@@ -485,7 +578,7 @@ if ($text == "🖥 اضافه کردن پنل  مرزبان") {
     $stmt->bind_param("ss", $step, $from_id);
     $stmt->execute();
 }
-if ($user['step'] == "add_name_panel") {
+elseif ($user['step'] == "add_name_panel") {
     $stmt = $connect->prepare("INSERT INTO marzban_panel (name_panel) VALUES (?)");
     $name_panel = htmlspecialchars($text);
     $stmt->bind_param("s", $name_panel);
@@ -506,7 +599,7 @@ if ($user['step'] == "add_name_panel") {
     $stmt->bind_param("ss", $text, $from_id);
     $stmt->execute();
 }
-if ($user['step'] == "add_link_panel") {
+elseif ($user['step'] == "add_link_panel") {
     if (filter_var($text, FILTER_VALIDATE_URL)) {
         sendmessage($from_id, "👤 آدرس پنل ذخیره شد حالا نام کاربری  را ارسال کنید.", $backadmin);
         $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
@@ -520,7 +613,7 @@ if ($user['step'] == "add_link_panel") {
         sendmessage($from_id, "🔗 آدرس دامنه نامعتبر است", $backadmin);
     }
 }
-if ($user['step'] == "add_username_panel") {
+elseif ($user['step'] == "add_username_panel") {
     sendmessage($from_id, "🔑 نام کاربری ذخیره شد  در پایان رمز عبور پنل مرزبان خود را وارد نمایید.", $backadmin);
     $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
     $step = 'add_password_panel';
@@ -530,7 +623,7 @@ if ($user['step'] == "add_username_panel") {
     $stmt->bind_param("ss", $text, $Processing_value);
     $stmt->execute();
 }
-if ($user['step'] == "add_password_panel") {
+elseif ($user['step'] == "add_password_panel") {
     sendmessage($from_id, "تبریک پنل شما با موفقیت اضافه گردید.", $backadmin);
     sendmessage($from_id, "🥳", $keyboardmarzban);
     $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
@@ -704,6 +797,27 @@ elseif ($user['step'] == "text_dec_usertest"){
     $stmt->bind_param("ss", $step, $from_id);
     $stmt->execute();
 }
+elseif ($text == "متن دکمه 📚  آموزش"){
+    $textstart = "
+    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن فعلی :
+    ".$textdatabot['text_help'];
+    sendmessage($from_id, $textstart, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'text_help';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "text_help"){
+    sendmessage($from_id, "✅ متن با موفقیت ذخیره شد", $textbot);
+    $stmt = $connect->prepare("UPDATE textbot SET text_help = ?");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
 //_________________________________________________
 if ($text == "✍️ ارسال پیام برای یک کاربر"){
     sendmessage($from_id, "متن خود را ارسال کنید", $backadmin);
@@ -740,5 +854,4 @@ $Processing_value
     $step = 'home';
     $stmt->bind_param("ss", $step, $from_id);
     $stmt->execute();
-
 }
