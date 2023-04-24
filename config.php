@@ -13,7 +13,6 @@ defined('time') or define('time', 1); // زمان اکانت تست  واحد س
 defined('adminnumber') or define('adminnumber', 5522424631);// آیدی عددی ادمین
 //-----------------------------text panel-------------------------------
 $textdatabot = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM textbot"));
-$Feature_status_data = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM Feature_status"));
 $keyboard = json_encode([
     'keyboard' => [
         [['text' => $textdatabot['text_info']], ['text' => $textdatabot['text_usertest']]],
