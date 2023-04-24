@@ -8,11 +8,28 @@ try {
 
     if (!$table_exists) {
         $connect->query("CREATE TABLE user (
-        id varchar(30) PRIMARY KEY,
+        id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         limit_usertest int(100) NOT NULL,
         Processing_value varchar(100000) NOT NULL,
         step varchar(5000) NOT NULL)");
         echo "table user✅</br>";
+    }
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}
+//-----------------------------------------------------------------
+try {
+    $result = $connect->query("SHOW TABLES LIKE 'help'");
+    $table_exists = ($result->num_rows > 0);
+
+    if (!$table_exists) {
+        $connect->query("CREATE TABLE help (
+        id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        name_os varchar(500) NOT NULL,
+        Media_os varchar(5000) NOT NULL,
+        type_Media_os varchar(500) NOT NULL,
+        Description_os TEXT(10000) NOT NULL)");
+        echo "table help✅</br>";
     }
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
@@ -44,9 +61,10 @@ try {
         text_dec_info varchar(100000) NOT NULL,
         text_usertest varchar(100000) NOT NULL,
         text_dec_usertest varchar(100000) NOT NULL,
+        text_help varchar(1000) NOT NULL,
         text_start varchar(100000) NOT NULL)");
         echo "table textbot✅</br>";
-        $connect->query("INSERT INTO textbot (text_start,text_info,text_usertest,text_dec_info,text_dec_usertest) VALUES ('سلام خوش آمدید','📊  اطلاعات سرویس','🔑 اکانت تست','$text_info','$text_usertest')");
+        $connect->query("INSERT INTO textbot (text_start,text_info,text_usertest,text_dec_info,text_dec_usertest,text_help) VALUES ('سلام خوش آمدید','📊  اطلاعات سرویس','🔑 اکانت تست','$text_info','$text_usertest','📚  آموزش')");
     }
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
