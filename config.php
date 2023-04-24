@@ -16,7 +16,7 @@ $textdatabot = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM textbot"
 $keyboard = json_encode([
     'keyboard' => [
         [['text' => $textdatabot['text_info']], ['text' => $textdatabot['text_usertest']]],
-            [['text' => $textdatabot['text_help']]]
+            [['text' => $textdatabot['text_support']],['text' => $textdatabot['text_help']]]
     ],
     'resize_keyboard' => true
 ]);
@@ -114,7 +114,7 @@ $textbot = json_encode([
         [['text' => "تنظیم متن دکمه 🔑 اکانت تست"]],
         [['text' => "📝 تنظیم متن توضیحات اطلاعات سرویس "]],
         [['text' => "📝 تنظیم متن توضیحات  اکانت تست"]],
-        [['text' => "متن دکمه 📚  آموزش"]],
+        [['text' => "متن دکمه 📚  آموزش"],['text' => "متن دکمه ☎️ پشتیبانی "]],
         [['text' => "🏠 بازگشت به منوی مدیریت"]]
     ],
     'resize_keyboard' => true
