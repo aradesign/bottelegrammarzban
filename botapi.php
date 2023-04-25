@@ -1,5 +1,4 @@
 <?php
-//include('config.php');
 function telegram($method, $datas = [])
 {
     $url = "https://api.telegram.org/bot" . API_KEY . "/" . $method;
