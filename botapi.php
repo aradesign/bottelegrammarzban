@@ -45,3 +45,11 @@ function sendvideo($chat_id,$videoid,$caption){
         'caption'=> $caption,
     ]);
 }
+function Editmessagetext($chat_id, $message_id, $text, $keyboard){
+    telegram('editmessagetext', [
+        'chat_id' => $chat_id,
+        'message_id' => $message_id,
+        'text' => $text,
+        'reply_markup' => $keyboard
+    ]);
+}
