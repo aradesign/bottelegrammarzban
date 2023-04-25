@@ -8,7 +8,7 @@ try {
 
     if (!$table_exists) {
         $connect->query("CREATE TABLE user (
-        id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        id varchar(1000) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         limit_usertest int(100) NOT NULL,
         Processing_value varchar(100000) NOT NULL,
         step varchar(5000) NOT NULL,
