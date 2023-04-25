@@ -11,7 +11,9 @@ try {
         id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         limit_usertest int(100) NOT NULL,
         Processing_value varchar(100000) NOT NULL,
-        step varchar(5000) NOT NULL)");
+        step varchar(5000) NOT NULL,
+        description_blocking varchar(5000) NOT NULL,
+        User_Status varchar(500) NOT NULL)");
         echo "table user✅</br>";
     }
 } catch (Exception $e) {
@@ -55,6 +57,9 @@ try {
     
     🛑 در صورت رعایت نکردن موارد بالا با خطا مواجه خواهید شد
       ";
+    $helpt = "📚  آموزش";
+    $supportt = "☎️ پشتیبانی";
+    $bot_off = " ❌ ربات خاموش است ، لطفا دقایقی دیگر مراجعه کنید";
     if (!$table_exists) {
         $connect->query("CREATE TABLE textbot (
         text_info varchar(100000) NOT NULL,
@@ -63,11 +68,10 @@ try {
         text_dec_usertest varchar(100000) NOT NULL,
         text_help varchar(1000) NOT NULL,
         text_support varchar(1000) NOT NULL,
+        text_dec_bot_off varchar(7000) NOT NULL,
         text_start varchar(100000) NOT NULL)");
         echo "table textbot✅</br>";
-        $helpt = "📚  آموزش";
-        $supportt = "☎️ پشتیبانی";
-        $connect->query("INSERT INTO textbot (text_start,text_info,text_usertest,text_dec_info,text_dec_usertest,text_help,text_support) VALUES ('سلام خوش آمدید','📊  اطلاعات سرویس','🔑 اکانت تست','$text_info','$text_usertest','$helpt','$supportt')");
+        $connect->query("INSERT INTO textbot (text_start,text_info,text_usertest,text_dec_info,text_dec_usertest,text_help,text_support,text_dec_bot_off ) VALUES ('سلام خوش آمدید','📊  اطلاعات سرویس','🔑 اکانت تست','$text_info','$text_usertest','$helpt','$supportt','$bot_off')");
     }
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
@@ -79,9 +83,10 @@ try {
 
     if (!$table_exists) {
         $connect->query("CREATE TABLE setting (
+        Bot_Status varchar(200) NOT NULL,
         count_usertest varchar(5000) NOT NULL)");
         echo "table setting✅</br>";
-                $connect->query("INSERT INTO setting (count_usertest) VALUES ('0')");
+                $connect->query("INSERT INTO setting (count_usertest,Bot_Status) VALUES ('0','✅ روشن ')");
     }
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
