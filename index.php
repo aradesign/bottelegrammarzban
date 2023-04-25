@@ -4,7 +4,7 @@ pv  => @gholipour3
 channel => @botpanelmarzban
 */
 
-global $connect, $keyboard, $backuser, $list_marzban_panel_user, $keyboardadmin, $channelkeyboard, $backadmin, $keyboardmarzban, $json_list_marzban_panel, $sendmessageuser, $textbot, $json_list_help;
+global $connect, $keyboard, $backuser, $list_marzban_panel_user, $keyboardadmin, $channelkeyboard, $backadmin, $keyboardmarzban, $json_list_marzban_panel, $sendmessageuser, $textbot, $json_list_help, $blockuserkey;
 require_once 'config.php';
 require_once 'botapi.php';
 require_once 'apipanel.php';
@@ -67,6 +67,15 @@ if (isset($channels['link'])) {
 }
 
 #-----------------------#
+if ($user['User_Status'] == "block"){
+    $textblock ="
+   🚫 شما از طرف مدیریت بلاک شده اید .
+   
+✍️ دلیل مسدودی : {$user['description_blocking']}
+    ";
+    sendmessage($from_id, $textblock, null);
+    return;
+}
 if (!in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka == "on" && !in_array($from_id, $admin_ids)) {
     $text_channel = "   
     ⚠️کاربر گرامی ؛ شما عضو چنل ما نیستید
@@ -78,6 +87,13 @@ if (!in_array($tch, ['member', 'creator', 'administrator']) && $Channel_locka ==
     sendmessage($from_id, $text_channel, null);
     return;
 }
+
+#-----------------------#
+if ($setting['Bot_Status'] == "❌ خاموش" && !in_array($from_id, $admin_ids)) {
+    sendmessage($from_id, $textdatabot['text_dec_bot_off'], null);
+    return;
+}
+#-----------------------#
 if ($text == "/start") {
     sendmessage($from_id, $textdatabot['text_start'], $keyboard);
     $connect->query("INSERT IGNORE INTO user (id , step,limit_usertest,Processing_value) VALUES ('$from_id', 'none',".limit_usertest.",'none')");
@@ -172,7 +188,7 @@ if ($user['step'] == "getdata") {
                 ['text' => 'زمان پایان:', 'callback_data' => 'expirationDate'],
             ], [], [
                 ['text' => $day, 'callback_data' => 'روز'],
-                ['text' => 'زمان باقی مانده تا پایان سرویس:', 'callback_data' => 'day'],
+                ['text' => 'زمان باقی مانده سرویس :', 'callback_data' => 'day'],
             ], [
                 ['text' => $LastTraffic, 'callback_data' => 'LastTraffic'],
                 ['text' => 'حجم کل سرویس :', 'callback_data' => 'LastTraffic'],
@@ -662,7 +678,7 @@ if ($text  == "📝 تنظیم متون ربات"){
 }
 elseif ($text == "تنظیم متن دکمه شروع"){
     $textstart = "
-    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+        متن جدید خود را ارسال کنید.
     متن فعلی :
      ".$textdatabot['text_start'];
     sendmessage($from_id, $textstart, $backadmin);
@@ -683,7 +699,7 @@ elseif ($user['step'] == "changetextstart"){
 }
 elseif ($text == "تنظیم متن  دکمه 📊  اطلاعات سرویس"){
     $textstart = "
-    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن جدید خود را ارسال کنید.
     متن فعلی :
      ".$textdatabot['text_info'];
     sendmessage($from_id, $textstart, $backadmin);
@@ -704,7 +720,7 @@ elseif ($user['step'] == "changetextinfo"){
 }
 elseif ($text == "تنظیم متن دکمه 🔑 اکانت تست"){
     $textstart = "
-    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن جدید خود را ارسال کنید.
     متن فعلی :
      ".$textdatabot['text_usertest'];
     sendmessage($from_id, $textstart, $backadmin);
@@ -725,7 +741,7 @@ elseif ($user['step'] == "changetextusertest"){
 }
 elseif ($text == "📝 تنظیم متن توضیحات اطلاعات سرویس "){
     $textstart = "
-    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن جدید خود را ارسال کنید.
     متن فعلی :
     ``` ".$textdatabot['text_dec_info']."```";
     sendmessage($from_id, $textstart, $backadmin);
@@ -746,7 +762,7 @@ elseif ($user['step'] == "changetextinfodec"){
 }
 elseif ($text == "📝 تنظیم متن توضیحات  اکانت تست"){
     $textstart = "
-    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن جدید خود راارسال کنید.
     متن فعلی :
     ``` ".$textdatabot['text_dec_usertest']."```";
     sendmessage($from_id, $textstart, $backadmin);
@@ -767,7 +783,7 @@ elseif ($user['step'] == "text_dec_usertest"){
 }
 elseif ($text == "متن دکمه 📚  آموزش"){
     $textstart = "
-    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن جدید خود را ارسال کنید.
     متن فعلی :
     ".$textdatabot['text_help'];
     sendmessage($from_id, $textstart, $backadmin);
@@ -788,7 +804,7 @@ elseif ($user['step'] == "text_help"){
 }
 elseif ($text == "متن دکمه ☎️ پشتیبانی"){
     $textstart = "
-    متن جدید خود را برای متن  دکمه شروع ارسال کنید.
+    متن جدید خود راارسال کنید.
     متن فعلی :
     ".$textdatabot['text_support'];
     sendmessage($from_id, $textstart, $backadmin);
@@ -800,6 +816,27 @@ elseif ($text == "متن دکمه ☎️ پشتیبانی"){
 elseif ($user['step'] == "text_support"){
     sendmessage($from_id, "✅ متن با موفقیت ذخیره شد", $textbot);
     $stmt = $connect->prepare("UPDATE textbot SET text_support = ?");
+    $stmt->bind_param("s", $text);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($text == "تغییر متن دکمه ی 📡 وضعیت  ربات"){
+    $textstart = "
+    متن جدید خود راارسال کنید.
+    متن فعلی :
+    ".$textdatabot['text_dec_bot_off'];
+    sendmessage($from_id, $textstart, $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'text_dec_bot_off';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "text_dec_bot_off"){
+    sendmessage($from_id, "✅ متن با موفقیت ذخیره شد", $textbot);
+    $stmt = $connect->prepare("UPDATE textbot SET text_dec_bot_off = ?");
     $stmt->bind_param("s", $text);
     $stmt->execute();
     $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
@@ -922,4 +959,108 @@ if($forward_from_id != 0){
 $text";
     sendmessage($forward_from_id, $textSendAdminToUser, null);
     sendmessage($from_id, "✅ پیام با موفقیت برای کاربر ارسال گردید.", null);
+}
+//_________________________________________________
+$Bot_Status = json_encode([
+    'inline_keyboard' => [
+        [
+            ['text' => $setting['Bot_Status'], 'callback_data' => $setting['Bot_Status']],
+        ],
+    ]
+]);
+if ($text == "📡 وضعیت  ربات"){
+    sendmessage($from_id, "وضعیت ربات ", $Bot_Status);
+}
+if ($datain == "✅ روشن"){
+    $stmt = $connect->prepare("UPDATE setting SET Bot_Status = ?");
+    $Status = '❌ خاموش';
+    $stmt->bind_param("s", $Status);
+    $stmt->execute();
+    Editmessagetext($from_id, $message_id, "ربات خاموش گردید.❌", null);
+}
+elseif ($datain == "❌ خاموش"){
+    $stmt = $connect->prepare("UPDATE setting SET Bot_Status = ?");
+    $Status = '✅ روشن';
+    $stmt->bind_param("s", $Status);
+    $stmt->execute();
+    Editmessagetext($from_id, $message_id, "🤖 ربات روشن گردید.", null);
+}
+//_________________________________________________
+if ($text == "🚫 مسدودی کاربر"){
+    sendmessage($from_id, "یکی از گزینه های زیر را انتخاب کنید👇", $blockuserkey);
+}
+elseif ($text == "🔒 مسدود کردن کاربر"){
+    sendmessage($from_id, "👤 آیدی عددی کاربر را ارسال کنید.", $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'getidblock';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "getidblock"){
+    if (!in_array($text, $users_ids)) {
+        sendmessage($from_id, "کاربری با این شناسه یافت نشد", $backadmin);
+        return;
+    }
+    $query = sprintf("SELECT * FROM user WHERE id = '%d' LIMIT 1", $text);
+    $result = mysqli_query($connect, $query);
+    $userblock = mysqli_fetch_assoc($result);
+    if ($userblock['User_Status'] == "block") {
+        sendmessage($from_id, "کاربر از قبل بلاک بوده است❗️ ", $backadmin);
+        return;
+    }
+    $stmt = $connect->prepare("UPDATE user SET Processing_value = ? WHERE id = ?");
+    $stmt->bind_param("ss", $text, $from_id);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET User_Status = ? WHERE id = ?");
+    $User_Status = "block";
+    $stmt->bind_param("ss", $User_Status, $text);
+    $stmt->execute();
+    sendmessage($from_id, "🚫 کاربر مسدود شد حالا دلیل مسدودی هم ارسال کنید.", $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'adddecriptionblock';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "adddecriptionblock"){
+    $stmt = $connect->prepare("UPDATE user SET description_blocking = ? WHERE id = ?");
+    $stmt->bind_param("ss", $text, $Processing_value);
+    $stmt->execute();
+    sendmessage($from_id, "✍️ دلیل مسدودی کاربر ذخیره شد", $keyboardadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($text == "🔓 باز کردن مسدود کاربر"){
+    sendmessage($from_id, "👤 آیدی عددی کاربر را ارسال کنید.", $backadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'getidunblock';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
+}
+elseif ($user['step'] == "getidunblock"){
+    if (!in_array($text, $users_ids)) {
+        sendmessage($from_id, "کاربری با این شناسه یافت نشد", $backadmin);
+        return;
+    }
+    $query = sprintf("SELECT * FROM user WHERE id = '%d' LIMIT 1", $text);
+    $result = mysqli_query($connect, $query);
+    $userunblock = mysqli_fetch_assoc($result);
+    if ($userunblock['User_Status'] == "Active") {
+        sendmessage($from_id, "کاربر بلاک نیست😐", $backadmin);
+        return;
+    }
+    $stmt = $connect->prepare("UPDATE user SET User_Status = ? WHERE id = ?");
+    $User_Status = "Active";
+    $stmt->bind_param("ss", $User_Status, $text);
+    $stmt->execute();
+    $stmt = $connect->prepare("UPDATE user SET description_blocking = ? WHERE id = ?");
+    $spcae = "";
+    $stmt->bind_param("ss", $spcae, $Processing_value);
+    $stmt->execute();
+    sendmessage($from_id, "کاربر از حالت مسدودی خارج گردید.🤩", $keyboardadmin);
+    $stmt = $connect->prepare("UPDATE user SET step = ? WHERE id = ?");
+    $step = 'home';
+    $stmt->bind_param("ss", $step, $from_id);
+    $stmt->execute();
 }
