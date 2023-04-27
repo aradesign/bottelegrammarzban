@@ -85,12 +85,11 @@ foreach ($datatxtbot as $item) {
 #---------channel--------------#
 $channels = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM channels  LIMIT 1"));
 $tch = '';
-if (isset($channels['link'])) {
     $response = json_decode(file_get_contents('https://api.telegram.org/bot' . API_KEY . "/getChatMember?chat_id=@{$channels['link']}&user_id=$from_id"));
     $tch = $response->result->status;
-}
 
 #-----------------------#
+$connect->query("INSERT IGNORE INTO user (id , step,limit_usertest,Processing_value,User_Status) VALUES ('$from_id', 'none'," . limit_usertest . ",'none','Active')");
 if ($user['User_Status'] == "block") {
     $textblock = "
        🚫 شما از طرف مدیریت بلاک شده اید .
@@ -131,7 +130,6 @@ if ($setting['Bot_Status'] == "❌ خاموش" && !in_array($from_id, $admin_ids
 #-----------------------#
 if ($text == "/start") {
     sendmessage($from_id, $datatextbot['text_start'], $keyboard);
-    $connect->query("INSERT IGNORE INTO user (id , step,limit_usertest,Processing_value) VALUES ('$from_id', 'none'," . limit_usertest . ",'none')");
 }
 if ($text == "🏠 بازگشت به منوی اصلی") {
     $textback = "به صفحه اصلی بازگشتید!";
@@ -599,8 +597,7 @@ if ($text == "🖥 اضافه کردن پنل  مرزبان") {
     $stmt->execute();
 } elseif ($user['step'] == "add_name_panel") {
     $stmt = $connect->prepare("INSERT INTO marzban_panel (name_panel) VALUES (?)");
-    $name_panel = htmlspecialchars($text);
-    $stmt->bind_param("s", $name_panel);
+    $stmt->bind_param("s", $text);
     $stmt->execute();
     $text_add_url_panel = "
             🔗نام پنل ذخیره شد حالا  آدرس  پنل خود ارسال کنید
