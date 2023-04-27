@@ -16,11 +16,35 @@ defined('val') or define('val', 100);// حجم اکانت تست واحد مگا
 defined('time') or define('time', 1); // زمان اکانت تست  واحد ساعت
 defined('adminnumber') or define('adminnumber', 5522424631);// آیدی عددی ادمین
 //-----------------------------text panel-------------------------------
-$textdatabot = mysqli_fetch_assoc(mysqli_query($connect, "SELECT * FROM textbot"));
+$textdatabot = mysqli_query($connect, "SELECT * FROM textbot");
+$datatxtbot = array();
+foreach ($textdatabot as $row) {
+    $datatxtbot[] = array(
+        'id_text' => $row['id_text'],
+        'text' => $row['text']
+    );
+}
+$datatextbot = array(
+    'text_usertest' => '',
+    'text_info' => '',
+    'text_support' => '',
+    'text_help' => '',
+    'text_start' => '',
+    'text_bot_off' => '',
+    'text_dec_info' => '',
+    'text_dec_usertest' => '',
+    'text_fq' => ''
+);
+foreach ($datatxtbot as $item) {
+    if (isset($datatextbot[$item['id_text']])) {
+        $datatextbot[$item['id_text']] = $item['text'];
+    }
+}
 $keyboard = json_encode([
     'keyboard' => [
-        [['text' => $textdatabot['text_info']], ['text' => $textdatabot['text_usertest']]],
-            [['text' => $textdatabot['text_support']],['text' => $textdatabot['text_help']]]
+            [['text' => $datatextbot['text_info']], ['text' => $datatextbot['text_usertest']]],
+            [['text' => $datatextbot['text_support']],['text' => $datatextbot['text_help']]],
+            [['text' => $datatextbot['text_fq']]]
     ],
     'resize_keyboard' => true
 ]);
@@ -32,13 +56,35 @@ $keyboardadmin = json_encode([
         [['text' => "📜 مشاهده لیست  ادمین ها"]],
         [['text' => "👨‍💻 اضافه کردن ادمین"],['text' => "❌ حذف ادمین"]],
         [['text' => "🚫 مسدودی کاربر"]],
-        [['text' => "📚 اضافه کردن آموزش "],['text' => "🖥 تنظیمات پنل مرزبان"]]
+        [['text' => "📚 بخش آموزش "],['text' => "🖥 پنل مرزبان"]],
+        [['text' => "♨️بخش قوانین"]],
+        [['text' => "🏠 بازگشت به منوی اصلی"]]
+    ],
+    'resize_keyboard' => true
+]);
+$keyboardhelpadmin = json_encode([
+    'keyboard' => [
+        [['text' => "📚 اضافه کردن آموزش"],['text' => "❌ حذف آموزش "]],
+        [['text' => "🏠 بازگشت به منوی مدیریت"]]
     ],
     'resize_keyboard' => true
 ]);
 $blockuserkey = json_encode([
     'keyboard' => [
         [['text' => "🔒 مسدود کردن کاربر"],['text' => "🔓 باز کردن مسدود کاربر"]],
+        [['text' => "🏠 بازگشت به منوی مدیریت"]]
+    ],
+    'resize_keyboard' => true
+]);
+$confrimrolls = json_encode([
+    'keyboard' => [
+        [['text' => "✅ قوانین را می پذیرم"]],
+    ],
+    'resize_keyboard' => true
+]);
+$rollkey = json_encode([
+    'keyboard' => [
+        [['text' => "💡 روشن / خاموش کردن تایید قوانین"],['text' => "⚖️ متن قانون"]],
         [['text' => "🏠 بازگشت به منوی مدیریت"]]
     ],
     'resize_keyboard' => true
@@ -122,13 +168,12 @@ foreach($namepanel as $button) {
 $list_marzban_panel_user = json_encode($list_marzban_panel_users);
 $textbot = json_encode([
     'keyboard' => [
-        [['text' => "تنظیم متن دکمه شروع"]],
-        [['text' => " تنظیم متن  دکمه 📊  اطلاعات سرویس"]],
-        [['text' => "تنظیم متن دکمه 🔑 اکانت تست"]],
-        [['text' => "📝 تنظیم متن توضیحات اطلاعات سرویس "]],
-        [['text' => "📝 تنظیم متن توضیحات  اکانت تست"]],
-        [['text' => "تغییر متن دکمه ی 📡 وضعیت  ربات"]],
+        [['text' => "تنظیم متن شروع"],['text' => "دکمه اطلاعات سرویس"]],
+        [['text' => "دکمه اکانت تست"],['text' => "دکمه سوالات متداول"]],
         [['text' => "متن دکمه 📚  آموزش"],['text' => "متن دکمه ☎️ پشتیبانی "]],
+        [['text' => "📝 تنظیم متن توضیحات اطلاعات سرویس "]],
+        [['text' => "📝 تنظیم متن توضیحات  سوالات متداول"]],
+        [['text' => "📝 تنظیم متن توضیحات پشتیبانی"]],
         [['text' => "🏠 بازگشت به منوی مدیریت"]]
     ],
     'resize_keyboard' => true
