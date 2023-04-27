@@ -297,9 +297,8 @@ if ($user['step'] == "crateusertest") {
         🌐 حجم سرویس تست %d مگابایت
         
         لینک اشتراک شما   :
-        ```
-        %s
-        ```
+
+%s
                         ";
         $textcreatuser = sprintf($textcreatuser, time, val, $output_config_link);
         sendmessage($from_id, $textcreatuser, $keyboard);
