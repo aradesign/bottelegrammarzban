@@ -245,10 +245,10 @@ try {
     if (!$table_exists) {
         $connect->query("CREATE TABLE marzban_panel (
         id INT(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        name_panel varchar(2000) NOT NULL,
-        url_panel varchar(2000) NOT NULL,
-        username_panel varchar(200) NOT NULL,
-        password_panel varchar(200) NOT NULL )");
+        name_panel varchar(2000) NULL,
+        url_panel varchar(2000) NULL,
+        username_panel varchar(200) NULL,
+        password_panel varchar(200) NULL )");
         echo "table marzban_panel ✅ </br>";
     }
 } catch (Exception $e) {
