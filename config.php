@@ -135,24 +135,46 @@ $backadmin = json_encode([
     ],
     'resize_keyboard' => true
 ]);
-$namepanel = [];
-$marzbnget = mysqli_query($connect, "SELECT * FROM marzban_panel");
-while($row = mysqli_fetch_assoc($marzbnget)) {
-    $namepanel[] = [$row['name_panel']];
-}
-$list_marzban_panel = [
-    'keyboard' => [],
-    'resize_keyboard' => true,
-];
-$list_marzban_panel['keyboard'][] = [
-    ['text' => "🏠 بازگشت به منوی مدیریت"],
-];
-foreach($namepanel as $button) {
-    $list_marzban_panel['keyboard'][] = [
-        ['text' => $button[0]]
+$result = $connect->query("SHOW TABLES LIKE 'marzban_panel'");
+$table_exists = ($result->num_rows > 0);
+if ($table_exists) {
+    $namepanel = [];
+    $marzbnget = mysqli_query($connect, "SELECT * FROM marzban_panel");
+    while ($row = mysqli_fetch_assoc($marzbnget)) {
+        $namepanel[] = [$row['name_panel']];
+    }
+    $list_marzban_panel = [
+        'keyboard' => [],
+        'resize_keyboard' => true,
     ];
+    $list_marzban_panel['keyboard'][] = [
+        ['text' => "🏠 بازگشت به منوی مدیریت"],
+    ];
+    foreach ($namepanel as $button) {
+        $list_marzban_panel['keyboard'][] = [
+            ['text' => $button[0]]
+        ];
+    }
+    $json_list_marzban_panel = json_encode($list_marzban_panel);
+    $help = [];
+    $helpname = mysqli_query($connect, "SELECT * FROM help");
+    while ($row = mysqli_fetch_assoc($helpname)) {
+        $help[] = [$row['name_os']];
+    }
+    $help_arr = [
+        'keyboard' => [],
+        'resize_keyboard' => true,
+    ];
+    $help_arr['keyboard'][] = [
+        ['text' => "🏠 بازگشت به منوی اصلی"],
+    ];
+    foreach ($help as $button) {
+        $help_arr['keyboard'][] = [
+            ['text' => $button[0]]
+        ];
+    }
+    $json_list_help = json_encode($help_arr);
 }
-$json_list_marzban_panel = json_encode($list_marzban_panel);
 $list_marzban_panel_users = [
     'keyboard' => [],
     'resize_keyboard' => true,
@@ -178,22 +200,3 @@ $textbot = json_encode([
     ],
     'resize_keyboard' => true
 ]);
-//____________________________________________________
-$help = [];
-$helpname = mysqli_query($connect, "SELECT * FROM help");
-while($row = mysqli_fetch_assoc($helpname)) {
-    $help[] = [$row['name_os']];
-}
-$help_arr = [
-    'keyboard' => [],
-    'resize_keyboard' => true,
-];
-$help_arr['keyboard'][] = [
-    ['text' => "🏠 بازگشت به منوی اصلی"],
-];
-foreach($help as $button) {
-    $help_arr['keyboard'][] = [
-        ['text' => $button[0]]
-    ];
-}
-$json_list_help = json_encode($help_arr);
